@@ -109,7 +109,7 @@ async function handleCommand(commandName, userName, targetName) {
 
         fs.appendFileSync(logPath, log)
 
-        return await command.execute(user, targetName, data, dbPath, analytics)
+        return await command.execute(user, targetName, data, dbPath, analytics, sock, msg)
 
     } catch (err) {
 
