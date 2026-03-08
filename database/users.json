@@ -14,6 +14,10 @@
       "name": "John",
       "role": "user",
       "banned": false
+    },
+    {
+      "name": "Ash 2",
+      "banned": false
     }
   ]
 }

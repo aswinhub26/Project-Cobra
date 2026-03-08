@@ -1,4 +1,12 @@
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = require("@whiskeysockets/baileys")
+require("dotenv").config()
+
+const {
+    default: makeWASocket,
+    useMultiFileAuthState,
+    fetchLatestBaileysVersion,
+    DisconnectReason
+} = require("@whiskeysockets/baileys")
+
 const qrcode = require("qrcode-terminal")
 const pino = require("pino")
 const handleCommand = require("./commandHandler")
@@ -43,47 +51,69 @@ async function startBot() {
     })
 
     sock.ev.on("creds.update", saveCreds)
+
     sock.ev.on("messages.upsert", async ({ messages }) => {
 
-    const msg = messages[0]
+        const msg = messages[0]
 
-    if (!msg.message) return
+        if (!msg.message) return
 
-    const text =
-        msg.message.conversation ||
-        msg.message.extendedTextMessage?.text
+        const text =
+            msg.message.conversation ||
+            msg.message.extendedTextMessage?.text
 
-    if (!text) return
+        if (!text) return
 
-    console.log("Message received:", text)
+        console.log("Message received:", text)
 
-    // ignore messages without prefix
-    if (!text.startsWith(".")) return
+        // ignore non-command messages
+        if (!text.startsWith(".")) return
 
-    // split command + arguments
-    const args = text.slice(1).trim().split(" ")
-    const commandName = args[0]
-    const targetName = args[1]
+        const parts = text.slice(1).trim().split(/\s+/)
+        const commandName = parts[0]
+        const args = parts.slice(1).join(" ")
 
-    try {
+        const sender = msg.pushName || "User"
 
-        const response = handleCommand(commandName, "Aswin", targetName)
+        try {
 
-        if (response) {
-            await sock.sendMessage(msg.key.remoteJid, { text: String(response) })
+            const response = await handleCommand(commandName, sender, args)
+
+            if (!response) return
+
+            // MEDIA RESPONSE (VIDEO FILE)
+            if (typeof response === "object" && response.file) {
+
+                await sock.sendMessage(msg.key.remoteJid, {
+                    text: response.text
+                })
+
+                await sock.sendMessage(msg.key.remoteJid, {
+                    video: { url: response.file },
+                    caption: "📥 Downloaded by Cobra"
+                })
+
+                return
+            }
+  
+
+            // NORMAL TEXT RESPONSE
+            await sock.sendMessage(msg.key.remoteJid, {
+                text: String(response)
+            })
+
+        } catch (err) {
+
+            console.log("Command error:", err)
+
+            await sock.sendMessage(msg.key.remoteJid, {
+                text: "⚠ Command failed"
+            })
+
         }
 
-    } catch (err) {
+    })
 
-        console.log("Command error:", err)
-
-        await sock.sendMessage(msg.key.remoteJid, {
-            text: "⚠ Command failed"
-        })
-
-    }
-
-})
 }
 
 startBot()

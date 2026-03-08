@@ -1,3 +1,6 @@
 node_modules
+.env
+*.mp4
+yt-dlp.exe
+logs
 auth
-logs/commands.log

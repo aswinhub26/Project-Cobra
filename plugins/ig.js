@@ -1,4 +1,4 @@
-const axios = require("axios")
+const ytdlp = require("yt-dlp-exec")
 
 module.exports = {
     name: "ig",
@@ -6,7 +6,7 @@ module.exports = {
     async execute(user, url) {
 
         if (!url) {
-            return `📸 Instagram Downloader
+            return `📸 *Instagram Downloader*
 
 Usage:
 .ig instagram_link
@@ -17,21 +17,20 @@ Example:
 
         try {
 
-            const api =
-            `https://api.vreden.my.id/api/igdl?url=${encodeURIComponent(url)}`
+            const info = await ytdlp(url, {
+                dumpSingleJson: true
+            })
 
-            const res = await axios.get(api)
-
-            const video = res.data.result[0].url
+            const video = info.url
 
             return {
                 video: { url: video },
-                caption: "📸 Instagram Reel Downloaded"
+                caption: "📥 Instagram Reel Downloaded 🐍"
             }
 
         } catch (err) {
 
-            console.log("IG ERROR:", err)
+            console.log("IG ERROR:", err.message)
 
             return "⚠ Failed to download Instagram video"
         }

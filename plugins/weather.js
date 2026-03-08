@@ -1,16 +1,32 @@
+const axios = require("axios")
+
 module.exports = {
     name: "weather",
-    execute(user, targetName) {
 
-        return `
-🌦 Weather Plugin
+    async execute(user, city) {
 
-Location: Chennai
-Temperature: 31°C
-Condition: Sunny ☀️
-Humidity: 65%
+        if (!city) {
+            return "❌ Usage: .weather city"
+        }
 
-(Cobra Plugin System Working)
-`
+        try {
+
+            const res = await axios.get(
+                `https://wttr.in/${city}?format=j1`
+            )
+
+            const weather = res.data.current_condition[0]
+
+            return `🌤 Weather in ${city}
+
+Temperature: ${weather.temp_C}°C
+Condition: ${weather.weatherDesc[0].value}
+Humidity: ${weather.humidity}%`
+        }
+
+        catch {
+
+            return "⚠ Weather error"
+        }
     }
 }
