@@ -77,7 +77,7 @@ async function startBot() {
 
         try {
 
-           const response = await handleCommand(commandName, sender, args, sock, msg)
+           const response = await handleCommand(sock, msg, commandName, sender, args)
 
             if (!response) return
 

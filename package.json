@@ -6,6 +6,7 @@
     "chokidar": "^5.0.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "form-data": "^4.0.5",
     "groq-sdk": "^0.37.0",
     "instagram-url-direct": "^2.0.7",
     "node-fetch": "^3.3.2",

@@ -26,6 +26,26 @@
     {
       "name": "HR",
       "banned": false
+    },
+    {
+      "name": {
+        "key": {
+          "remoteJid": "35047637795070@lid",
+          "remoteJidAlt": "919514482262@s.whatsapp.net",
+          "fromMe": true,
+          "id": "3EB0A9CE00BC9CF81B689D",
+          "participant": "",
+          "addressingMode": "lid"
+        },
+        "messageTimestamp": 1773050751,
+        "pushName": "Ash 2",
+        "broadcast": false,
+        "status": 2,
+        "message": {
+          "conversation": ".ttt"
+        }
+      },
+      "banned": false
     }
   ]
 }
