@@ -1,98 +1,11 @@
-const axios = require("axios")
 const yts = require("yt-search")
-
-const AXIOS_DEFAULTS = {
-timeout:60000,
-headers:{
-"User-Agent":"Mozilla/5.0",
-"Accept":"application/json"
-}
-}
-
-async function tryRequest(getter,attempts=3){
-
-let lastError
-
-for(let i=1;i<=attempts;i++){
-
-try{
-return await getter()
-}
-catch(err){
-
-lastError=err
-
-if(i<attempts){
-await new Promise(r=>setTimeout(r,1000*i))
-}
-
-}
-
-}
-
-throw lastError
-}
-
-async function getElite(url){
-
-const api=`https://eliteprotech-apis.zone.id/ytdown?url=${encodeURIComponent(url)}&format=mp4`
-
-const res=await tryRequest(()=>axios.get(api,AXIOS_DEFAULTS))
-
-if(res?.data?.success && res?.data?.downloadURL){
-
-return{
-download:res.data.downloadURL,
-title:res.data.title
-}
-
-}
-
-throw new Error("Elite failed")
-
-}
-
-async function getYupra(url){
-
-const api=`https://api.yupra.my.id/api/downloader/ytmp4?url=${encodeURIComponent(url)}`
-
-const res=await tryRequest(()=>axios.get(api,AXIOS_DEFAULTS))
-
-if(res?.data?.data?.download_url){
-
-return{
-download:res.data.data.download_url,
-title:res.data.data.title
-}
-
-}
-
-throw new Error("Yupra failed")
-
-}
-
-async function getOkatsu(url){
-
-const api=`https://okatsu-rolezapiiz.vercel.app/downloader/ytmp4?url=${encodeURIComponent(url)}`
-
-const res=await tryRequest(()=>axios.get(api,AXIOS_DEFAULTS))
-
-if(res?.data?.result?.mp4){
-
-return{
-download:res.data.result.mp4,
-title:res.data.result.title
-}
-
-}
-
-throw new Error("Okatsu failed")
-
-}
+const ytdlp = require("yt-dlp-exec")
+const fs = require("fs")
+const path = require("path")
 
 module.exports = {
 
-name:"video",
+name: "video",
 
 async execute(sock,msg,args){
 
@@ -101,90 +14,119 @@ try{
 const chatId = msg.key.remoteJid
 
 if(!args){
+return `🎬 *Cobra Video Downloader*
 
-await sock.sendMessage(chatId,{
-text:"🎬 Send video name or YouTube link\nExample:\n.video Believer"
-},{quoted:msg})
+Usage:
+.video video name
+.video video name 720
+.video youtube_link
+.video youtube_link 360
 
-return
+Example:
+.video believer 720`
 }
 
-let videoUrl=""
-let title=""
-let thumb=""
+// default quality
+let quality = "720"
+let query = args
 
-if(args.startsWith("http")){
+// detect quality
+const parts = args.split(" ")
 
-videoUrl=args
+if(parts.length > 1 && ["360","720","1080"].includes(parts[parts.length-1])){
+quality = parts.pop()
+query = parts.join(" ")
+}
+
+let format = "bestvideo[height<=720]+bestaudio/best"
+
+if(quality === "360") format = "bestvideo[height<=360]+bestaudio/best"
+if(quality === "720") format = "bestvideo[height<=720]+bestaudio/best"
+if(quality === "1080") format = "bestvideo[height<=1080]+bestaudio/best"
+
+await sock.sendMessage(chatId,{
+react:{ text:"⏳", key:msg.key }
+})
+
+let videoUrl = ""
+let title = ""
+let thumb = ""
+
+// detect youtube link
+if(query.includes("youtube.com") || query.includes("youtu.be")){
+
+videoUrl = query
+
+// fix shorts link
+if(videoUrl.includes("shorts/")){
+videoUrl = videoUrl.replace("shorts/","watch?v=")
+}
 
 }else{
 
-const {videos} = await yts(args)
+const search = await yts(query)
 
-if(!videos.length){
-
-await sock.sendMessage(chatId,{
-text:"❌ No videos found"
-},{quoted:msg})
-
-return
+if(!search.videos.length){
+return "❌ No videos found"
 }
 
-videoUrl = videos[0].url
-title = videos[0].title
-thumb = videos[0].thumbnail
+videoUrl = search.videos[0].url
+title = search.videos[0].title
+thumb = search.videos[0].thumbnail
 
 }
 
+// send preview
 if(thumb){
 
 await sock.sendMessage(chatId,{
 image:{url:thumb},
-caption:`🎬 *${title || args}*\nDownloading...`
+caption:
+`🎬 *${title || query}*
+
+📺 Quality: ${quality}p
+⬇ Downloading video...`
 },{quoted:msg})
 
 }
 
-let data
+const tempDir = path.join(__dirname,"../temp")
 
-const apis=[
-()=>getElite(videoUrl),
-()=>getYupra(videoUrl),
-()=>getOkatsu(videoUrl)
-]
-
-for(const api of apis){
-
-try{
-
-data = await api()
-
-if(data.download) break
-
-}catch{}
-
+if(!fs.existsSync(tempDir)){
+fs.mkdirSync(tempDir)
 }
 
-if(!data){
+const filePath = path.join(tempDir,"cobra_video.mp4")
 
-throw new Error("All APIs failed")
-
-}
+// download video
+await ytdlp(videoUrl,{
+format: format,
+mergeOutputFormat:"mp4",
+ffmpegLocation:"C:/Users/aswin/Desktop/ffmpeg-8.0.1-essentials_build/bin",
+output:filePath
+})
 
 await sock.sendMessage(chatId,{
-video:{url:data.download},
-mimetype:"video/mp4",
-caption:`🎬 *${data.title || title || "Video"}*\n\n🐍 Downloaded by Cobra`
+text:"📤 Uploading video..."
 },{quoted:msg})
 
-}
-catch(err){
+// send video
+await sock.sendMessage(chatId,{
+video:{url:filePath},
+caption:`🎬 *${title || "Video"}*
 
-console.log("VIDEO ERROR:",err.message)
-
-await sock.sendMessage(msg.key.remoteJid,{
-text:"❌ Failed to download video"
+📺 Quality: ${quality}p
+🐍 Downloaded by Cobra`
 },{quoted:msg})
+
+// delete temp file
+fs.unlinkSync(filePath)
+
+}catch(err){
+
+console.log("VIDEO ERROR:",err)
+
+return "❌ Failed to download video"
 
 }
 

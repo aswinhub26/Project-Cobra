@@ -46,6 +46,10 @@
         }
       },
       "banned": false
+    },
+    {
+      "name": "User",
+      "banned": false
     }
   ]
 }

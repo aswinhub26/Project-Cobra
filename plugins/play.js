@@ -6,17 +6,20 @@ const path = require("path")
 module.exports = {
 name: "play",
 
-async execute(user, query, data, dbPath, analytics, sock, msg) {
+async execute(sock, msg, args, user, data, dbPath, analytics){
 
-try {
+try{
 
-if (!query) {
-return "🎵 Example: .play believer"
+const chatId = msg.key.remoteJid
+const query = args
+
+if(!query){
+return "🎵 Example:\n.play believer"
 }
 
 const search = await yts(query)
 
-if (!search.videos.length) {
+if(!search.videos.length){
 return "❌ Song not found"
 }
 
@@ -26,39 +29,43 @@ const title = video.title
 const duration = video.timestamp
 const thumbnail = video.thumbnail
 
-// preview message with thumbnail
-await sock.sendMessage(msg.key.remoteJid, {
-image: { url: thumbnail },
+await sock.sendMessage(chatId,{
+image:{ url: thumbnail },
 caption:
-`🎵 Downloading: *${title}*\n\n` +
-`⏱ Duration: ${duration}`
+`🎵 *Cobra Music Downloader*\n\n`+
+`📀 *Title:* ${title}\n`+
+`⏱ *Duration:* ${duration}\n\n`+
+`⬇ Downloading audio...`
+},{ quoted: msg })
+
+// ensure temp folder exists
+const tempDir = path.join(__dirname,"../temp")
+if(!fs.existsSync(tempDir)){
+fs.mkdirSync(tempDir)
+}
+
+const filePath = path.join(tempDir,"song.mp3")
+
+await ytdlp(video.url,{
+extractAudio:true,
+audioFormat:"mp3",
+ffmpegLocation:"C:/Users/aswin/Desktop/ffmpeg-8.0.1-essentials_build/bin",
+output:filePath
 })
 
-// file path
-const filePath = path.join(__dirname, "../temp/song.mp3")
-
-// download audio
-await ytdlp(video.url, {
-  extractAudio: true,
-  audioFormat: "mp3",
-  ffmpegLocation: "C:/Users/aswin/Desktop/ffmpeg-8.0.1-essentials_build/bin",
-  output: filePath
-})
-
-// send audio
-await sock.sendMessage(msg.key.remoteJid, {
-audio: fs.readFileSync(filePath),
-mimetype: "audio/mpeg",
-fileName: title + ".mp3"
-})
+await sock.sendMessage(chatId,{
+audio:{ url:filePath },
+mimetype:"audio/mpeg",
+fileName:title+".mp3"
+},{ quoted: msg })
 
 fs.unlinkSync(filePath)
 
 return null
 
-} catch (err) {
+}catch(err){
 
-console.log("PLAY ERROR:", err)
+console.log("PLAY ERROR:",err)
 
 return "⚠ Failed to download song"
 

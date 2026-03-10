@@ -5,55 +5,97 @@ module.exports = {
 
 name: "menu",
 
-execute() {
+execute(user, args, data, dbPath, analytics) {
 
 const commandsPath = path.join(__dirname)
 const pluginsPath = path.join(__dirname, "..", "plugins")
 
-const commandFiles = fs.readdirSync(commandsPath)
+const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"))
 const pluginFiles = fs.existsSync(pluginsPath)
-? fs.readdirSync(pluginsPath)
+? fs.readdirSync(pluginsPath).filter(f => f.endsWith(".js"))
 : []
 
-let coreCommands = ""
-let pluginCommands = ""
+let core = ""
+let ai = ""
+let download = ""
+let tools = ""
+let other = ""
 
+// CORE COMMANDS
 commandFiles.forEach(file => {
+
+try {
 
 const cmd = require(`./${file}`)
 
-if (cmd.name !== "menu") {
-coreCommands += `│ • .${cmd.name}\n`
+if (cmd.name && cmd.name !== "menu") {
+core += `│ • .${cmd.name}\n`
 }
+
+} catch {}
 
 })
 
+// PLUGINS
 pluginFiles.forEach(file => {
+
+try {
 
 const plugin = require(`../plugins/${file}`)
 
-pluginCommands += `│ • .${plugin.name}\n`
+if (!plugin.name) return
+
+// AI category
+if (["ai"].includes(plugin.name)) {
+ai += `│ • .${plugin.name}\n`
+}
+
+// Download category
+else if (["video","play","ig","gif","viewonce"].includes(plugin.name)) {
+download += `│ • .${plugin.name}\n`
+}
+
+// Tools
+else if (["translate","weather"].includes(plugin.name)) {
+tools += `│ • .${plugin.name}\n`
+}
+
+// Other
+else {
+other += `│ • .${plugin.name}\n`
+}
+
+} catch {}
 
 })
 
+
 let menu = `╭━━━〔 🐍 *PROJECT COBRA* 〕━━━╮
-┃ 🤖 *WhatsApp Multi-Plugin Bot*
+┃ 🤖 WhatsApp Multi-Plugin Bot
 ┃ ⚡ Fast • Modular • Powerful
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
 ╭─❍ *CORE COMMANDS*
-${coreCommands}╰───────────────
+${core}╰───────────────
 
-╭─❍ *PLUGINS*
-${pluginCommands}╰───────────────
+╭─❍ *🤖 AI*
+${ai || "│ • None\n"}╰───────────────
 
-╭─❍ *INFO*
-│ 👑 Owner: Ashx
-│ ⚙ Version: 1.0.0
-│ 🌐 Mode: Public
+╭─❍ *📥 DOWNLOADER*
+${download || "│ • None\n"}╰───────────────
+
+╭─❍ *🌐 TOOLS*
+${tools || "│ • None\n"}╰───────────────
+
+╭─❍ *⚙ OTHER*
+${other || "│ • None\n"}╰───────────────
+
+╭─❍ *BOT INFO*
+│ 👑 Owner : Ashx
+│ ⚙ Version : 1.0.0
 ╰───────────────
 
-✨ *Type a command with .* prefix
+✨ Type commands with *.* prefix
 Example: *.ping*
 `
 

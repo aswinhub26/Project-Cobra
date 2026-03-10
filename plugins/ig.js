@@ -3,42 +3,80 @@ const fs = require("fs")
 const path = require("path")
 
 module.exports = {
+
 name: "ig",
 
-async execute(user, link, data, dbPath, analytics, sock, msg) {
+async execute(sock, msg, args){
 
-try {
+try{
 
-if (!link) {
-return "📥 Example:\n.ig https://instagram.com/reel/xxxx"
+const chatId = msg.key.remoteJid
+
+if(!args){
+
+return `📥 *COBRA INSTAGRAM DOWNLOADER*
+
+Usage:
+.ig instagram_link
+
+Examples:
+.ig https://www.instagram.com/reel/xxxxx
+.ig https://www.instagram.com/p/xxxxx
+`
 }
 
-await sock.sendMessage(msg.key.remoteJid, {
-text: "📥 Downloading Instagram video..."
+// reaction
+await sock.sendMessage(chatId,{
+react:{ text:"📥", key: msg.key }
 })
 
-const filePath = path.join(__dirname, "../temp/ig.mp4")
+// loading message
+await sock.sendMessage(chatId,{
+text:"⏳ Fetching Instagram media..."
+},{quoted:msg})
 
-await ytdlp(link, {
-output: filePath
+// temp folder
+const tempDir = path.join(__dirname,"../temp")
+
+if(!fs.existsSync(tempDir)){
+fs.mkdirSync(tempDir)
+}
+
+// unique file name
+const filePath = path.join(tempDir,`ig_${Date.now()}.mp4`)
+
+// download
+await ytdlp(args,{
+output:filePath,
+format:"mp4"
 })
 
-await sock.sendMessage(msg.key.remoteJid, {
-video: fs.readFileSync(filePath),
-caption: "📥 Instagram video downloaded"
-}, { quoted: msg })
+// sending message
+await sock.sendMessage(chatId,{
+text:"📤 Uploading video..."
+},{quoted:msg})
 
+// send media
+await sock.sendMessage(chatId,{
+video:{url:filePath},
+caption:`📥 *Instagram Video*
+
+🐍 Downloaded by Cobra`
+},{quoted:msg})
+
+// delete temp file
 fs.unlinkSync(filePath)
 
 return null
 
-} catch (err) {
+}catch(err){
 
-console.log("IG ERROR:", err)
+console.log("IG ERROR:",err)
 
-return "⚠ Instagram download failed"
+return "⚠ Failed to download Instagram media"
+
+}
 
 }
 
-}
 }

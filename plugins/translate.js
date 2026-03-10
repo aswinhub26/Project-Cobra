@@ -1,84 +1,103 @@
 const axios = require("axios")
 
 const languageMap = {
-    english: "en",
-    tamil: "ta",
-    hindi: "hi",
-    french: "fr",
-    spanish: "es",
-    german: "de",
-    chinese: "zh",
-    japanese: "ja"
+english:"en",
+tamil:"ta",
+hindi:"hi",
+french:"fr",
+spanish:"es",
+german:"de",
+chinese:"zh",
+japanese:"ja",
+korean:"ko",
+arabic:"ar",
+malayalam:"ml",
+telugu:"te",
+kannada:"kn"
 }
 
 module.exports = {
-    name: "translate",
 
-    async execute(user, args) {
+name:"translate",
 
-        if (!args) {
-            return `🌍 *Cobra Translator*
+async execute(sock,msg,args){
+
+try{
+
+const chatId = msg.key.remoteJid
+
+if(!args){
+
+return `🌍 *COBRA TRANSLATOR*
 
 Usage:
-.translate hello ta
 .translate hello to tamil
+.translate hello fr
+.translate வணக்கம் to english`
+}
 
-Examples:
-.translate hello to french
-.translate வணக்கம் to english
-.translate bonjour to hindi`
-        }
+await sock.sendMessage(chatId,{
+react:{ text:"🌐", key:msg.key }
+})
 
-        let text = ""
-        let targetLang = ""
+await sock.sendMessage(chatId,{
+text:"🔄 Translating..."
+},{quoted:msg})
 
-        // Case 1: "hello to tamil"
-        if (args.includes(" to ")) {
+let text=""
+let targetLang=""
 
-            const parts = args.split(" to ")
+if(args.includes(" to ")){
 
-            text = parts[0].trim()
+const parts=args.split(" to ")
 
-            const langName = parts[1].trim().toLowerCase()
+text=parts[0].trim()
 
-            targetLang = languageMap[langName] || langName
+const langName=parts[1].trim().toLowerCase()
 
-        } 
-        else {
+targetLang=languageMap[langName] || langName
 
-            // Case 2: "hello ta"
-            const parts = args.split(" ")
+}else{
 
-            targetLang = parts.pop()
-            text = parts.join(" ")
-        }
+const parts=args.split(" ")
 
-        if (!text || !targetLang) {
-            return "❌ Usage: .translate hello to tamil"
-        }
+targetLang=parts.pop()
 
-        try {
+text=parts.join(" ")
+}
 
-            const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetLang}`
+if(!text || !targetLang){
+return "❌ Usage: .translate hello to tamil"
+}
 
-            const res = await axios.get(url)
+// GOOGLE TRANSLATE API
+const url=`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
 
-            const translated = res.data.responseData.translatedText
+const res = await axios.get(url)
 
-            return `🌍 *Cobra Translation*
+const translated = res.data[0].map(t => t[0]).join("")
 
-📝 Text: ${text}
+return `🌍 *COBRA TRANSLATOR*
 
-🌐 Target Language: ${targetLang}
+📝 *Original*
+${text}
 
-✨ Translation:
-${translated}`
+🌐 *Language*
+${targetLang}
 
-        } catch (err) {
+✨ *Translation*
+${translated}
 
-            console.log(err)
+⚡ Powered by Cobra`
 
-            return "⚠ Translation service error"
-        }
-    }
+}catch(err){
+
+console.log("TRANSLATE ERROR:",err)
+
+return "⚠ Translation failed"
+
+}
+
+}
+
 }

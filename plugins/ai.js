@@ -7,40 +7,62 @@ const groq = new Groq({
 module.exports = {
 name: "ai",
 
-async execute(user, query, data, dbPath, analytics, sock, msg) {
+async execute(sock, msg, args, user, data, dbPath, analytics){
 
-try {
+try{
 
-if (!query) {
-return "🤖 Example:\n.ai explain cybersecurity"
+const chatId = msg.key.remoteJid
+const query = args
+
+if(!query){
+return `🤖 *Cobra AI Assistant*
+
+✨ Ask anything!
+
+Example:
+.ai explain cybersecurity
+.ai write a HTML code
+.ai tell me a tech joke`
 }
 
-await sock.sendMessage(msg.key.remoteJid, {
-react: { text: "🧠", key: msg.key }
+// React to message
+await sock.sendMessage(chatId,{
+react:{ text:"🧠", key: msg.key }
 })
 
+// typing indicator
+await sock.sendPresenceUpdate("composing", chatId)
+
 const completion = await groq.chat.completions.create({
-messages: [
-{ role: "user", content: query }
+messages:[
+{
+role:"system",
+content:"You are Cobra AI 🤖, a smart assistant built for a WhatsApp bot. Answer clearly and helpfully."
+},
+{
+role:"user",
+content: query
+}
 ],
-model: "llama-3.1-8b-instant"
+model:"llama-3.1-8b-instant"
 })
 
 const answer = completion.choices[0].message.content
 
-await sock.sendMessage(msg.key.remoteJid, {
-text: answer
-}, { quoted: msg })
+await sock.sendMessage(chatId,{
+text:`🧠 *Cobra AI Response*\n\n${answer}\n\n⚡ Powered by AshGPT`
+},{ quoted: msg })
 
 return null
 
-} catch (err) {
+}catch(err){
 
-console.log("AI ERROR:", err)
+console.log("AI ERROR:",err)
 
-return "❌ AI service error"
+return "❌ ⚠️ Cobra AI service temporarily unavailable"
+
+}
 
 }
 
-}
 }
