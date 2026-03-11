@@ -1,44 +1,48 @@
 🐍 𝙋𝙧𝙤𝙟𝙚𝙘𝙩 𝘾𝙤𝙗𝙧𝙖
 
+Project Cobra is a modular WhatsApp automation engine built using **Node.js** and **Baileys**.
 
-Project Cobra is a modular WhatsApp automation engine built using Node.js and Baileys.
-
-It demonstrates how modern chatbot frameworks, automation engines, and bot platforms are designed using command-driven architecture and plugin-based modules.
+It demonstrates how modern chatbot frameworks, automation engines, and bot platforms are designed using **command-driven architecture** and **plugin-based modules**.
 
 This project simulates real-world backend systems used in chatbots, automation tools, and messaging bots.
 
-🚀 Features
-⚙ Core System
+---
 
-🧩 Modular command architecture
+# 🚀 Features
 
-🔌 Dynamic plugin loader
+## ⚙ Core System
 
-⏳ Command cooldown system
+- 🧩 Modular command architecture
+- 🔌 Dynamic plugin loader
+- ⏳ Command cooldown system
+- 📊 Command analytics tracking
+- 🗂 JSON database user management
+- 📝 Command logging system
+- ⚡ Real-time WhatsApp automation
 
-📊 Command analytics tracking
+---
 
-🗂 JSON database user management
+# 👑 Role-Based Permissions
 
-📝 Command logging system
+Project Cobra includes **multi-level access control**.
 
-⚡ Real-time WhatsApp automation
+| Role | Access |
+|-----|------|
+| 👑 Owner | Full bot control |
+| 🛡 Admin | Moderation commands |
+| 👤 User | Standard bot commands |
 
-👑 Role-Based Permissions
+---
 
-Project Cobra includes multi-level access control.
+# 🔌 Plugin System
 
-Role	Access
-👑 Owner	Full bot control
-🛡 Admin	Moderation commands
-👤 User	Standard bot commands
-🔌 Plugin System
+Project Cobra supports **dynamic plugins**, allowing commands to be added **without modifying the core engine**.
 
-Project Cobra supports dynamic plugins, allowing commands to be added without modifying the core engine.
+All plugins are automatically loaded from the **plugins folder**.
 
-All plugins are automatically loaded from the plugins folder.
+### Example Plugin Commands
 
-Example Plugin Commands
+
 .ai
 .video
 .play
@@ -47,132 +51,196 @@ Example Plugin Commands
 .translate
 .ig
 .viewonce
-⚙️ Commands
-🧠 Core Commands
-Command	Description
-.ping	Check if bot is alive
-.menu	Display command dashboard
-.about	Bot information
-.stats	Bot analytics
-🛡 Moderation Commands
-Command	Permission
-.kick	Admin / Owner
-.ban	Owner only
-🎵 Media & Utility Commands
-Command	Description
-.play	Download music from YouTube
-.video	Download YouTube videos
-.gif	Search GIFs
-.weather	Get weather info
-.translate	Translate text
-🤖 AI & Automation Commands
-Command	Description
-.ai	AI chatbot interaction
-.ig	Download Instagram media
-.viewonce	Reveal view-once media
-🏗 Project Architecture
-Project Cobra
+
+
+---
+
+# ⚙️ Commands
+
+## 🧠 Core Commands
+
+| Command | Description |
+|--------|-------------|
+| `.ping` | Check if bot is alive |
+| `.menu` | Display command dashboard |
+| `.about` | Bot information |
+| `.stats` | Bot analytics |
+
+---
+
+## 🛡 Moderation Commands
+
+| Command | Permission |
+|--------|-----------|
+| `.kick` | Admin / Owner |
+| `.ban` | Owner only |
+
+---
+
+## 🎵 Media & Utility Commands
+
+| Command | Description |
+|--------|-------------|
+| `.play` | Download music from YouTube |
+| `.video` | Download YouTube videos |
+| `.gif` | Search GIFs |
+| `.weather` | Get weather info |
+| `.translate` | Translate text |
+
+---
+
+## 🤖 AI & Automation Commands
+
+| Command | Description |
+|--------|-------------|
+| `.ai` | AI chatbot interaction |
+| `.ig` | Download Instagram media |
+| `.viewonce` | Reveal view-once media |
+
+---
+
+# 🏗 Project Architecture
+
+Project-Cobra
 │
-├── whatsapp.js        # WhatsApp bot connection
-├── commandHandler.js  # Command engine
-├── settings.js        # Bot configuration
+├── whatsapp.js
+├── commandHandler.js
+├── settings.js
 │
-├── commands           # Core commands
-│   ├── ping.js
-│   ├── menu.js
-│   ├── about.js
-│   ├── stats.js
-│   ├── ban.js
-│   └── kick.js
+├── commands
+│ ├── ping.js
+│ ├── menu.js
+│ ├── about.js
+│ ├── stats.js
+│ ├── ban.js
+│ └── kick.js
 │
-├── plugins            # Dynamic plugin commands
-│   ├── ai.js
-│   ├── video.js
-│   ├── gif.js
-│   ├── ig.js
-│   ├── play.js
-│   ├── weather.js
-│   └── viewonce.js
+├── plugins
+│ ├── ai.js
+│ ├── video.js
+│ ├── gif.js
+│ ├── ig.js
+│ ├── play.js
+│ ├── weather.js
+│ └── viewonce.js
 │
 ├── database
-│   └── users.json
+│ └── users.json
 │
 ├── logs
-│   └── commands.log
+│ └── commands.log
 │
 └── auth
-    └── WhatsApp session
-🧠 How Cobra Works
+└── WhatsApp session
 
-1️⃣ User sends a command in WhatsApp
 
-2️⃣ Prefix system validates the command
+---
 
-3️⃣ Command handler dynamically loads the module
+# 🧠 How Cobra Works
 
-4️⃣ Role permissions are verified
+1️⃣ User sends a command in WhatsApp  
 
-5️⃣ Plugin executes logic
+2️⃣ Prefix system validates the command  
 
-6️⃣ Command usage is logged and tracked
+3️⃣ Command handler dynamically loads the module  
 
-📱 WhatsApp Bot Demo
-Example Command
+4️⃣ Role permissions are verified  
+
+5️⃣ Plugin executes logic  
+
+6️⃣ Command usage is logged and tracked  
+
+---
+
+# 📱 WhatsApp Bot Demo
+
+### Example Command
+
+<img width="1236" height="860" alt="image" src="https://github.com/user-attachments/assets/38eb14a6-8caf-436c-bb16-e7e42496f1d2" />
+
 .ping
-Response
+
+
+Response:
+
+
 🐍 Project Cobra is Alive!
-Example Menu
+
+
+### Example Menu
+
+
 .menu
+
+<img width="913" height="845" alt="image" src="https://github.com/user-attachments/assets/3c28054a-3b8a-4633-9ab2-2049315ae81f" />
+
+
 
 Displays the full command dashboard.
 
-⚡ Installation
-1️⃣ Clone Repository
-git clone https://github.com/yourusername/project-cobra.git
-cd project-cobra
-2️⃣ Install Dependencies
+---
+
+# ⚡ Installation
+
+### 1️⃣ Clone Repository
+
+
+git clone https://github.com/aswinhub26/Project-Cobra.git
+
+cd Project-Cobra
+
+
+### 2️⃣ Install Dependencies
+
+
 npm install
-3️⃣ Start the Bot
+
+
+### 3️⃣ Start the Bot
+
+
 node whatsapp.js
 
-Scan the QR code using WhatsApp.
 
-📊 Future Improvements
+Scan the **QR code using WhatsApp**.
 
-🌐 Express REST API integration
+---
 
-📊 Advanced analytics dashboard
+# 📊 Future Improvements
 
-🗄 MongoDB database support
+- 🌐 Express REST API integration
+- 📊 Advanced analytics dashboard
+- 🗄 MongoDB database support
+- 🤖 Telegram / Discord integration
+- 🧠 Improved AI automation
+- ⚡ Distributed bot architecture
 
-🤖 Telegram / Discord integration
+---
 
-🧠 Improved AI automation
-
-⚡ Distributed bot architecture
-
-🤝 Contributing
+# 🤝 Contributing
 
 Contributions are welcome!
 
 Steps:
 
-1️⃣ Fork the repository
-2️⃣ Create a new branch
-3️⃣ Submit a Pull Request
+1️⃣ Fork the repository  
+2️⃣ Create a new branch  
+3️⃣ Submit a Pull Request  
 
-👨‍💻 Author
+---
 
-Aswin D
+# 👨‍💻 Author
 
-Project Cobra was built as a learning project to explore:
+**Aswin D**
 
-chatbot frameworks
+Project Cobra was built as a **learning project** to explore:
 
-automation systems
+- chatbot frameworks
+- automation systems
+- scalable backend architectures
 
-scalable backend architectures
+It demonstrates how **real bot platforms and automation engines work internally**.
 
-It demonstrates how real bot platforms and automation engines work internally.
+---
 
-⭐ If you like this project, consider starring the repository.
+⭐ If you like this project, consider **starring the repository**.
