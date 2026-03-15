@@ -101,7 +101,6 @@ All plugins are automatically loaded from the **plugins folder**.
 | `.viewonce` | Reveal view-once media |
 | `.removebg` | Remove image background (reply to photo) |
 
-> ℹ️ `.removebg` works with free fallbacks. For best reliability/speed, set `REMOVEBG_API_KEY` in `.env`.
 
 ---
 
