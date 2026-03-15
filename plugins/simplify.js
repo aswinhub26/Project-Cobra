@@ -1,14 +1,24 @@
 const axios = require("axios")
 
 const languageMap = {
-english: "en",
-eng: "en",
-en: "en",
-tamil: "ta",
-ta: "ta",
-hindi: "hi",
-hi: "hi"
+    english: "en",
+    eng: "en",
+    en: "en",
+    tamil: "ta",
+    ta: "ta",
+    hindi: "hi",
+    hi: "hi"
 }
+
+const languageLabel = {
+    en: "English",
+    ta: "Tamil",
+    hi: "Hindi"
+}
+
+const stopWords = new Set([
+    "the", "and", "for", "with", "this", "that", "from", "into", "have", "has", "had", "was", "were", "are", "is", "am", "will", "would", "shall", "can", "could", "should", "about", "there", "their", "them", "they", "you", "your", "yours", "our", "ours", "his", "her", "hers", "its", "not", "but", "also", "than", "then", "too", "very", "just", "more", "most", "some", "such", "only", "because", "while", "where", "when"
+])
 
 function splitSentences(text) {
     return text
@@ -20,7 +30,8 @@ function splitSentences(text) {
 }
 
 function tokenize(text) {
-    return (text.toLowerCase().match(/\p{L}+/gu) || []).filter(token => token.length > 2)
+    return (text.toLowerCase().match(/\p{L}+/gu) || [])
+        .filter(token => token.length > 2 && !stopWords.has(token))
 }
 
 function createSimpleSummary(text) {
@@ -28,55 +39,79 @@ function createSimpleSummary(text) {
 
     if (sentences.length <= 2) {
         return {
+            context: sentences[0] || text.trim(),
             summary: text.trim(),
-            context: sentences[0] || text.trim()
+            keyPoints: [text.trim()]
         }
     }
 
-    const freq = {}
+    const frequency = {}
 
     tokenize(text).forEach(token => {
-        freq[token] = (freq[token] || 0) + 1
+        frequency[token] = (frequency[token] || 0) + 1
     })
 
     const scored = sentences.map((sentence, index) => {
         const words = tokenize(sentence)
+        const frequencyScore = words.reduce((total, word) => total + (frequency[word] || 0), 0)
+        const densityBonus = Math.min(6, words.length * 0.4)
+        const positionBonus = index === 0 ? 2 : 0
 
-        const score = words.reduce((total, word) => total + (freq[word] || 0), 0)
-
-        return { sentence, index, score }
+        return {
+            sentence,
+            index,
+            score: frequencyScore + densityBonus + positionBonus
+        }
     })
 
-    const keepCount = Math.max(1, Math.min(3, Math.ceil(sentences.length * 0.35)))
+    const keepCount = Math.max(2, Math.min(4, Math.ceil(sentences.length * 0.35)))
 
-    const selected = scored
+    const chosen = scored
         .sort((a, b) => b.score - a.score)
         .slice(0, keepCount)
         .sort((a, b) => a.index - b.index)
         .map(item => item.sentence)
 
     return {
-        summary: selected.join(" "),
-        context: sentences[0]
+        context: sentences[0],
+        summary: chosen.join(" "),
+        keyPoints: chosen.slice(0, 3)
     }
 }
 
 async function translateText(text, targetLang) {
     if (!text || targetLang === "en") return text
 
-    const url = "https://translate.googleapis.com/translate_a/single"
-
-    const res = await axios.get(url, {
+    const res = await axios.get("https://translate.googleapis.com/translate_a/single", {
         params: {
             client: "gtx",
             sl: "auto",
             tl: targetLang,
             dt: "t",
             q: text
-        }
+        },
+        timeout: 10000
     })
 
-    return res.data[0].map(part => part[0]).join("")
+    return res.data[0].map(item => item[0]).join("")
+}
+
+function parseInput(args) {
+    let targetLang = "en"
+    let text = args.trim()
+
+    const matchTo = text.match(/^to\s+(english|eng|en|tamil|ta|hindi|hi)\s+(.+)/i)
+    const matchDirect = text.match(/^(english|eng|en|tamil|ta|hindi|hi)\s+(.+)/i)
+
+    if (matchTo) {
+        targetLang = languageMap[matchTo[1].toLowerCase()] || "en"
+        text = matchTo[2].trim()
+    } else if (matchDirect) {
+        targetLang = languageMap[matchDirect[1].toLowerCase()] || "en"
+        text = matchDirect[2].trim()
+    }
+
+    return { targetLang, text }
 }
 
 module.exports = {
@@ -100,42 +135,51 @@ Usage:
                 react: { text: "✂️", key: msg.key }
             })
 
-            let targetLang = "en"
-            let inputText = args.trim()
+            const { targetLang, text } = parseInput(args)
 
-            const toMatch = inputText.match(/^to\s+(english|eng|en|tamil|ta|hindi|hi)\s+(.+)/i)
-            const directMatch = inputText.match(/^(english|eng|en|tamil|ta|hindi|hi)\s+(.+)/i)
-
-            if (toMatch) {
-                targetLang = languageMap[toMatch[1].toLowerCase()] || "en"
-                inputText = toMatch[2].trim()
-            } else if (directMatch) {
-                targetLang = languageMap[directMatch[1].toLowerCase()] || "en"
-                inputText = directMatch[2].trim()
+            if (text.length < 40) {
+                return "❌ Please send a longer passage (at least 40 characters) so I can simplify it clearly."
             }
 
-            if (inputText.length < 30) {
-                return "❌ Please send a bigger message (at least 30 characters) to simplify."
+            const { context, summary, keyPoints } = createSimpleSummary(text)
+
+            let translatedContext = context
+            let translatedSummary = summary
+            let translatedPoints = keyPoints
+            let note = ""
+
+            if (targetLang !== "en") {
+                try {
+                    const translatedPointText = await translateText(keyPoints.join("\n"), targetLang)
+
+                    const [tContext, tSummary] = await Promise.all([
+                        translateText(context, targetLang),
+                        translateText(summary, targetLang)
+                    ])
+
+                    translatedContext = tContext
+                    translatedSummary = tSummary
+                    translatedPoints = translatedPointText.split("\n").filter(Boolean)
+                } catch (translationError) {
+                    console.log("SIMPLIFY TRANSLATION ERROR:", translationError)
+                    note = "\n\n⚠ Translation service is busy. Showing result in English."
+                }
             }
 
-            const { summary, context } = createSimpleSummary(inputText)
-
-            const [translatedSummary, translatedContext] = await Promise.all([
-                translateText(summary, targetLang),
-                translateText(context, targetLang)
-            ])
+            const points = translatedPoints.slice(0, 3).map(point => `• ${point}`).join("\n")
 
             return `✂️ *COBRA SIMPLIFY*
 
-🌐 *Language:* ${targetLang}
+🌐 *Language:* ${languageLabel[targetLang] || targetLang}
 
 📌 *Short Context:*
 ${translatedContext}
 
-📝 *Easy Summary:*
+📝 *Simple Summary:*
 ${translatedSummary}
 
-⚡ Send a longer passage for better simplification.`
+🔎 *Key Points:*
+${points}${note}`
         } catch (err) {
             console.log("SIMPLIFY ERROR:", err)
             return "⚠ Unable to simplify now. Please try again."
