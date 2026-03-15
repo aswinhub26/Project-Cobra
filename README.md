@@ -49,6 +49,7 @@ All plugins are automatically loaded from the **plugins folder**.
 .gif
 .weather
 .translate
+.simplify
 .ig
 .viewonce
 
@@ -86,6 +87,7 @@ All plugins are automatically loaded from the **plugins folder**.
 | `.gif` | Search GIFs |
 | `.weather` | Get weather info |
 | `.translate` | Translate text |
+| `.simplify` | Simplify long text with language output (EN/TA/HI) |
 
 ---
 
