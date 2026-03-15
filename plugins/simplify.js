@@ -1,4 +1,11 @@
 const axios = require("axios")
+const Groq = require("groq-sdk")
+
+function getGroqClient() {
+    if (!process.env.GROQ_API_KEY) return null
+
+    return new Groq({ apiKey: process.env.GROQ_API_KEY })
+}
 
 const languageMap = {
     english: "en",
@@ -84,10 +91,33 @@ async function translateText(text, targetLang, forceTranslate = false) {
 
     if (targetLang === "en" && !forceTranslate) return text
 
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
-    const res = await axios.get(url, { timeout: 10000 })
+    try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+        const res = await axios.get(url, { timeout: 10000 })
 
-    return res.data[0].map(item => item[0]).join("")
+        return res.data[0].map(item => item[0]).join("")
+    } catch (error) {
+        const groq = getGroqClient()
+
+        if (!groq) throw error
+
+        const completion = await groq.chat.completions.create({
+            model: "llama-3.1-8b-instant",
+            temperature: 0.1,
+            messages: [
+                {
+                    role: "system",
+                    content: `Translate the text to ${targetLang}. Return only translated text. Keep line breaks exactly.`
+                },
+                {
+                    role: "user",
+                    content: text
+                }
+            ]
+        })
+
+        return completion.choices?.[0]?.message?.content?.trim() || text
+    }
 }
 
 function parseInput(args) {
@@ -164,8 +194,8 @@ Usage:
                     translatedSummary = tSummary
                     translatedPoints = translatedPointText.split("\n").filter(Boolean)
                 } catch (translationError) {
-                    console.log("SIMPLIFY TRANSLATION ERROR:", translationError)
-                    note = "\n\n⚠ Translation service is busy. Showing result in detected language."
+                    console.log("SIMPLIFY TRANSLATION ERROR:", translationError?.message || translationError)
+                    note = "\n\n⚠ Translation is currently unavailable. Showing simplified result in original language."
                 }
             }
 
