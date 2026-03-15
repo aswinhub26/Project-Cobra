@@ -53,6 +53,7 @@ All plugins are automatically loaded from the **plugins folder**.
 .ig
 .viewonce
 .removebg
+.news
 
 
 ---
@@ -89,6 +90,7 @@ All plugins are automatically loaded from the **plugins folder**.
 | `.weather` | Get weather info |
 | `.translate` | Translate text |
 | `.simplify` | Simplify long text with language output (EN/TA/HI) |
+| `.news` | Get latest top headlines in English or Tamil |
 
 ---
 
