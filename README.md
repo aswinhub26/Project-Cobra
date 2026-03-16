@@ -54,6 +54,7 @@ All plugins are automatically loaded from the **plugins folder**.
 .viewonce
 .removebg
 .news
+.sticker
 
 
 ---
@@ -91,6 +92,7 @@ All plugins are automatically loaded from the **plugins folder**.
 | `.translate` | Translate text |
 | `.simplify` | Simplify long text with language output (EN/TA/HI) |
 | `.news` | Get latest top headlines in English or Tamil |
+| `.sticker` | Reply to image for sticker or generate AI sticker from prompt |
 
 ---
 
@@ -102,6 +104,7 @@ All plugins are automatically loaded from the **plugins folder**.
 | `.ig` | Download Instagram media |
 | `.viewonce` | Reveal view-once media |
 | `.removebg` | Remove image background (reply to photo) |
+| `.sticker` | Create stickers from replied images or AI text prompts |
 
 
 ---
