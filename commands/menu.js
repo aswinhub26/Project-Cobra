@@ -51,7 +51,7 @@ ai += `│ • .${plugin.name}\n`
 }
 
 // Download category
-else if (["video","play","ig","gif","viewonce"].includes(plugin.name)) {
+else if (["video","play","ig","gif","viewonce","autostatus"].includes(plugin.name)) {
 download += `│ • .${plugin.name}\n`
 }
 
