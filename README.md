@@ -55,6 +55,7 @@ All plugins are automatically loaded from the **plugins folder**.
 .removebg
 .news
 .sticker
+.autostatus
 
 
 ---
@@ -105,6 +106,46 @@ All plugins are automatically loaded from the **plugins folder**.
 | `.viewonce` | Reveal view-once media |
 | `.removebg` | Remove image background (reply to photo) |
 | `.sticker` | Create stickers from replied images or AI text prompts |
+| `.autostatus` | Auto-post supported social links to WhatsApp status (ON/OFF/manual) |
+
+
+
+## 🔥 AutoStatus Plugin
+
+`autostatus` supports:
+- YouTube / YouTube Shorts
+- Instagram / Instagram Reels
+- Facebook Video / Facebook Reels
+- ShareChat
+- Moj
+
+### Command Usage
+- `.autostatus on`
+- `.autostatus off`
+- `.autostatus status`
+- `.autostatus <link>`
+
+### Persistence
+State is stored in:
+
+`database/autostatus.json`
+
+### Auto Trigger Integration (whatsapp.js)
+```js
+const autoStatusPlugin = require("./plugins/autostatus");
+
+// inside messages.upsert after extracting text
+if (!text.startsWith(".")) {
+  await autoStatusPlugin.handleAutoStatusMessage(sock, msg, text);
+  return;
+}
+```
+
+### Fallback Order
+1. Provider1 - Cobalt API
+2. Provider2 - Cobalt mirror
+3. Provider3 - yt-dlp universal download
+4. Provider4 - yt-dlp metadata direct URL
 
 
 ---

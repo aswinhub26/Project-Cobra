@@ -13,6 +13,7 @@ const qrcode = require("qrcode-terminal");
 const pino = require("pino");
 const handleCommand = require("./commandHandler");
 const settings = require("./settings");
+const autoStatusPlugin = require("./plugins/autostatus");
 
 let bannerSent = false;
 
@@ -130,7 +131,10 @@ async function startBot() {
 
             console.log("Message received:", text);
 
-            if (!text.startsWith(".")) return;
+            if (!text.startsWith(".")) {
+                await autoStatusPlugin.handleAutoStatusMessage(sock, msg, text);
+                return;
+            }
 
             const parts = text.slice(1).trim().split(/\s+/);
             const commandName = parts[0].toLowerCase();
