@@ -56,7 +56,7 @@ download += `│ • .${plugin.name}\n`
 }
 
 // Tools
-else if (["translate","weather","simplify","news"].includes(plugin.name)) {
+else if (["translate","weather","simplify","news","sticker"].includes(plugin.name)) {
 tools += `│ • .${plugin.name}\n`
 }
 
