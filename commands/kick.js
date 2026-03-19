@@ -3,6 +3,8 @@ const {
     getBotJids,
     getGroupMetadata,
     resolveParticipantJid,
+    getBotJid,
+    getGroupMetadata,
     getSenderJid,
     getTargetJid,
     isAdmin,
@@ -10,6 +12,8 @@ const {
     matchesAnyJid,
     participantName,
     sameUserJid
+    normalizeJid,
+    participantName
 } = require("../lib/groupUtils")
 
 module.exports = {
@@ -27,12 +31,15 @@ module.exports = {
             const senderJid = getSenderJid(msg)
             const botJids = getBotJids(sock, msg)
             const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
+            const botJid = getBotJid(sock)
+            const targetJid = normalizeJid(getTargetJid(msg))
 
             if (!canManageGroup(metadata, senderJid, user)) {
                 return "🛡 Only group admins or the owner can use this command"
             }
 
             if (!isAdmin(metadata, botJids)) {
+            if (!isAdmin(metadata, botJid)) {
                 return "⚠ Bot must be an admin to remove members"
             }
 
@@ -49,6 +56,15 @@ module.exports = {
             }
 
             if (metadata.owner && sameUserJid(targetJid, metadata.owner)) {
+            if (targetJid === senderJid) {
+                return "⚠ You cannot kick yourself"
+            }
+
+            if (targetJid === botJid) {
+                return "⚠ I cannot kick myself"
+            }
+
+            if (metadata.owner && targetJid === normalizeJid(metadata.owner)) {
                 return "👑 I cannot remove the group owner"
             }
 
