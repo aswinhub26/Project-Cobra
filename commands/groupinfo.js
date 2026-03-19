@@ -16,6 +16,13 @@ module.exports = {
     name: "groupinfo",
 
     async execute(sock, msg, args) {
+    participantName
+} = require("../lib/groupUtils")
+
+module.exports = {
+    name: "groupinfo",
+
+    async execute(sock, msg) {
         try {
             const chatId = msg.key.remoteJid
 
@@ -56,6 +63,22 @@ module.exports = {
             }, { quoted: msg })
 
             return null
+            const ownerName = metadata.owner
+                ? participantName(metadata, metadata.owner)
+                : "Unknown"
+
+            const text = `👥 *Group Info*
+
+📛 Name: ${metadata.subject || "Unnamed Group"}
+🆔 ID: ${chatId}
+👑 Owner: ${ownerName}
+👤 Members: ${metadata.participants?.length || 0}
+🛡 Admins: ${adminJids.length}
+🔇 Muted: ${metadata.announce ? "Yes" : "No"}
+🔒 Locked Edit Info: ${metadata.restrict ? "Yes" : "No"}
+📝 Description: ${metadata.desc || "No description set"}`
+
+            return text
         } catch (err) {
             console.log("GROUPINFO ERROR:", err)
             return "⚠ Failed to fetch group info"
