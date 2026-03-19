@@ -1,0 +1,46 @@
+const {
+    canManageGroup,
+    getGroupMetadata,
+    getSenderJid,
+    isGroupChat,
+    mentionTag,
+    normalizeJid,
+    participantName
+} = require("../lib/groupUtils")
+
+module.exports = {
+    name: "tagall",
+
+    async execute(sock, msg, args, user) {
+        try {
+            const chatId = msg.key.remoteJid
+
+            if (!isGroupChat(chatId)) {
+                return "❌ This command works only in groups"
+            }
+
+            const metadata = await getGroupMetadata(sock, chatId)
+            const senderJid = getSenderJid(msg)
+
+            if (!canManageGroup(metadata, senderJid, user)) {
+                return "🛡 Only group admins or the owner can use this command"
+            }
+
+            const members = (metadata.participants || []).map((participant) => normalizeJid(participant.id))
+            const header = args?.trim() ? `📢 ${args.trim()}` : "📢 Attention everyone"
+            const body = members
+                .map((jid, index) => `${index + 1}. ${mentionTag(jid)} — ${participantName(metadata, jid)}`)
+                .join("\n")
+
+            await sock.sendMessage(chatId, {
+                text: `${header}\n\n${body}`,
+                mentions: members
+            }, { quoted: msg })
+
+            return null
+        } catch (err) {
+            console.log("TAGALL ERROR:", err)
+            return "⚠ Failed to tag all members"
+        }
+    }
+}
