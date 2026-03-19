@@ -11,7 +11,7 @@ const {
 } = require("../lib/groupUtils")
 
 module.exports = {
-    name: "kick",
+    name: "promote",
 
     async execute(sock, msg, args, user) {
         try {
@@ -31,35 +31,23 @@ module.exports = {
             }
 
             if (!isAdmin(metadata, botJid)) {
-                return "⚠ Bot must be an admin to remove members"
+                return "⚠ Bot must be an admin to promote members"
             }
 
             if (!targetJid) {
-                return "❌ Mention or reply to a member to kick"
-            }
-
-            if (targetJid === senderJid) {
-                return "⚠ You cannot kick yourself"
-            }
-
-            if (targetJid === botJid) {
-                return "⚠ I cannot kick myself"
-            }
-
-            if (metadata.owner && targetJid === normalizeJid(metadata.owner)) {
-                return "👑 I cannot remove the group owner"
+                return "❌ Mention or reply to a member to promote"
             }
 
             if (isAdmin(metadata, targetJid)) {
-                return "⚠ You cannot kick another admin with this command"
+                return "ℹ This member is already an admin"
             }
 
-            await sock.groupParticipantsUpdate(chatId, [targetJid], "remove")
+            await sock.groupParticipantsUpdate(chatId, [targetJid], "promote")
 
-            return `👢 Removed ${participantName(metadata, targetJid)} from the group`
+            return `🛡 Promoted ${participantName(metadata, targetJid)} to admin`
         } catch (err) {
-            console.log("KICK ERROR:", err)
-            return "⚠ Failed to remove member"
+            console.log("PROMOTE ERROR:", err)
+            return "⚠ Failed to promote member"
         }
     }
 }
