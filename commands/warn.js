@@ -4,6 +4,13 @@ const {
     ensureWarnEntry,
     getGroupMetadata,
     getGroupState,
+    resolveParticipantJid,
+    getSenderJid,
+    getTargetJid,
+    isGroupChat,
+    participantName,
+    saveGroupDb,
+    sameUserJid
     getSenderJid,
     getTargetJid,
     isGroupChat,
@@ -25,6 +32,7 @@ module.exports = {
 
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
+            const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
             const targetJid = normalizeJid(getTargetJid(msg))
 
             if (!canManageGroup(metadata, senderJid, user)) {
@@ -35,6 +43,7 @@ module.exports = {
                 return "❌ Mention or reply to a member to warn"
             }
 
+            if (sameUserJid(targetJid, senderJid)) {
             if (targetJid === senderJid) {
                 return "⚠ You cannot warn yourself"
             }

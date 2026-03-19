@@ -1,6 +1,9 @@
 const {
     getGroupMetadata,
     getGroupState,
+    resolveParticipantJid,
+    getTargetJid,
+    isGroupChat,
     getTargetJid,
     isGroupChat,
     normalizeJid,
@@ -19,6 +22,7 @@ module.exports = {
             }
 
             const metadata = await getGroupMetadata(sock, chatId)
+            const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
             const targetJid = normalizeJid(getTargetJid(msg))
             const { group } = getGroupState(chatId)
 

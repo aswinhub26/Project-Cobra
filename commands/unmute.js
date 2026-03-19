@@ -1,5 +1,6 @@
 const {
     canManageGroup,
+    getBotJids,
     getBotJid,
     getGroupMetadata,
     getGroupState,
@@ -22,12 +23,14 @@ module.exports = {
 
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
+            const botJids = getBotJids(sock, msg)
             const botJid = getBotJid(sock)
 
             if (!canManageGroup(metadata, senderJid, user)) {
                 return "🛡 Only group admins or the owner can use this command"
             }
 
+            if (!isAdmin(metadata, botJids)) {
             if (!isAdmin(metadata, botJid)) {
                 return "⚠ Bot must be an admin to unmute the group"
             }

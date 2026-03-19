@@ -1,5 +1,8 @@
 const {
     canManageGroup,
+    getBotJids,
+    getGroupMetadata,
+    resolveParticipantJid,
     getBotJid,
     getGroupMetadata,
     getSenderJid,
@@ -23,6 +26,8 @@ module.exports = {
 
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
+            const botJids = getBotJids(sock, msg)
+            const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
             const botJid = getBotJid(sock)
             const targetJid = normalizeJid(getTargetJid(msg))
 
@@ -30,6 +35,7 @@ module.exports = {
                 return "🛡 Only group admins or the owner can use this command"
             }
 
+            if (!isAdmin(metadata, botJids)) {
             if (!isAdmin(metadata, botJid)) {
                 return "⚠ Bot must be an admin to promote members"
             }
