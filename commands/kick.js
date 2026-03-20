@@ -1,173 +1,28 @@
-const {
-    canManageGroup,
-    getBotJids,
-    getGroupMetadata,
-    resolveParticipantJid,
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-    getBotJid,
-    getGroupMetadata,
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-    getSenderJid,
-    getTargetJid,
-    isAdmin,
-    isGroupChat,
-    matchesAnyJid,
-    participantName,
-    sameUserJid
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-    normalizeJid,
-    participantName
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-} = require("../lib/groupUtils")
+const { getGroupMetadata, isGroupChat, listAdminJids } = require("../lib/groupUtils")
 
 module.exports = {
     name: "kick",
 
-    async execute(sock, msg, args, user) {
+    async execute(sock, msg) {
         try {
             const chatId = msg.key.remoteJid
+            const sender = msg.key.participant || msg.key.remoteJid
 
-            if (!isGroupChat(chatId)) {
-                return "❌ This command works only in groups"
-            }
+            if (!isGroupChat(chatId)) return "❌ Group only command"
 
             const metadata = await getGroupMetadata(sock, chatId)
-            const senderJid = getSenderJid(msg)
-            const botJids = getBotJids(sock, msg)
-            const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-            const botJid = getBotJid(sock)
-            const targetJid = normalizeJid(getTargetJid(msg))
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
+            const admins = listAdminJids(metadata)
 
-            if (!canManageGroup(metadata, senderJid, user)) {
-                return "🛡 Only group admins or the owner can use this command"
-            }
+            if (!admins.includes(sender)) return "⚠ Only admins can use this"
 
-            if (!isAdmin(metadata, botJids)) {
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-            if (!isAdmin(metadata, botJid)) {
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-                return "⚠ Bot must be an admin to remove members"
-            }
+            const target = msg.message?.extendedTextMessage?.contextInfo?.participant
+            if (!target) return "⚠ Reply to a user"
 
-            if (!targetJid) {
-                return "❌ Mention or reply to a member to kick"
-            }
+            await sock.groupParticipantsUpdate(chatId, [target], "remove")
 
-            if (sameUserJid(targetJid, senderJid)) {
-                return "⚠ You cannot kick yourself"
-            }
-
-            if (matchesAnyJid(targetJid, botJids)) {
-                return "⚠ I cannot kick myself"
-            }
-
-            if (metadata.owner && sameUserJid(targetJid, metadata.owner)) {
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-            if (targetJid === senderJid) {
-                return "⚠ You cannot kick yourself"
-            }
-
-            if (targetJid === botJid) {
-                return "⚠ I cannot kick myself"
-            }
-
-            if (metadata.owner && targetJid === normalizeJid(metadata.owner)) {
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-                return "👑 I cannot remove the group owner"
-            }
-
-            if (isAdmin(metadata, targetJid)) {
-                return "⚠ You cannot kick another admin with this command"
-            }
-
-            await sock.groupParticipantsUpdate(chatId, [targetJid], "remove")
-
-            return `👢 Removed ${participantName(metadata, targetJid)} from the group`
-        } catch (err) {
-            console.log("KICK ERROR:", err)
-            return "⚠ Failed to remove member"
+            return "✅ User kicked 🥾"
+        } catch {
+            return "⚠ Failed to kick user"
         }
     }
 }

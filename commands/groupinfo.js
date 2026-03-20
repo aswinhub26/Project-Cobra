@@ -6,23 +6,10 @@ const {
     participantName
 } = require("../lib/groupUtils")
 
-function compactText(value) {
-    return String(value || "")
-        .replace(/\s+/g, " ")
-        .trim()
-}
-
 module.exports = {
     name: "groupinfo",
 
     async execute(sock, msg, args) {
-    participantName
-} = require("../lib/groupUtils")
-
-module.exports = {
-    name: "groupinfo",
-
-    async execute(sock, msg) {
         try {
             const chatId = msg.key.remoteJid
 
@@ -31,64 +18,25 @@ module.exports = {
             }
 
             const metadata = await getGroupMetadata(sock, chatId)
-            const adminJids = listAdminJids(metadata)
-            const ownerJid = metadata.owner || metadata.subjectOwner || ""
-            const memberCount = metadata.participants?.length || 0
-            const adminCount = adminJids.length
-            const regularCount = Math.max(memberCount - adminCount, 0)
-            const ownerLine = ownerJid
-                ? `${mentionTag(ownerJid)} (${participantName(metadata, ownerJid)})`
-                : "Unavailable"
-            const description = compactText(metadata.desc) || "No description set"
-            const wantsFullId = /\b(full|id)\b/i.test(String(args || ""))
+            const admins = listAdminJids(metadata)
+            const owner = metadata.owner || metadata.subjectOwner
 
-    let text = `👥 *Group Info*
+            const text = `👥 *GROUP INFO*
 
-📛 Name: ${metadata.subject || "Unnamed Group"}
-👑 Owner: ${ownerLine}
-👥 Total Members: ${memberCount}
-🛡 Admins: ${adminCount}
-🙋 Regular Members: ${regularCount}
+📛 Name: ${metadata.subject}
+👑 Owner: ${owner ? mentionTag(owner) : "Unknown"}
+👥 Members: ${metadata.participants?.length || 0}
+🛡 Admins: ${admins.length}
 🔇 Muted: ${metadata.announce ? "Yes" : "No"}
-🔒 Locked Edit Info: ${metadata.restrict ? "Yes" : "No"}
-📝 Description: ${description}`
-
-    if (wantsFullId) {
-        text += `\n🆔 Group JID: \`${chatId}\``
-    }
-
-    return {
-        ownerJid,
-        text
-    }
-}
-
-module.exports = {
-    name: "groupinfo",
-
-    async execute(sock, msg, args) {
-        try {
-            const chatId = msg.key.remoteJid
-
-            if (!isGroupChat(chatId)) {
-                return "❌ This command works only in groups"
-            }
-
-            const metadata = await getGroupMetadata(sock, chatId)
-            const { ownerJid, text } = buildGroupInfoText(metadata, chatId, args)
-
-            if (!sock?.sendMessage) {
-                return text
-            }
+🔒 Locked: ${metadata.restrict ? "Yes" : "No"}
+📝 Description: ${metadata.desc || "No description"}`
 
             await sock.sendMessage(chatId, {
                 text,
-                mentions: ownerJid ? [ownerJid] : []
+                mentions: owner ? [owner] : []
             }, { quoted: msg })
 
-            return null
-        } catch (err) {
-            console.log("GROUPINFO ERROR:", err)
+        } catch (e) {
             return "⚠ Failed to fetch group info"
         }
     }

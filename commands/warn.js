@@ -1,127 +1,100 @@
+const fs = require("fs");
+const path = require("path");
 const {
-    canManageGroup,
-    cleanTargetArg,
-    ensureWarnEntry,
     getGroupMetadata,
-    getGroupState,
-    resolveParticipantJid,
-    getSenderJid,
-    getTargetJid,
     isGroupChat,
-    participantName,
-    saveGroupDb,
-    sameUserJid
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-    getSenderJid,
-    getTargetJid,
-    isGroupChat,
-    normalizeJid,
-    participantName,
-    saveGroupDb
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-} = require("../lib/groupUtils")
+    listAdminJids,
+    mentionTag
+} = require("../lib/groupUtils");
+
+const WARN_PATH = path.join(__dirname, "..", "database", "warnings.json");
+const MAX_WARNS = 3;
+
+function loadWarnings() {
+    try {
+        if (!fs.existsSync(WARN_PATH)) {
+            fs.writeFileSync(WARN_PATH, JSON.stringify({}, null, 2));
+        }
+        return JSON.parse(fs.readFileSync(WARN_PATH, "utf8"));
+    } catch {
+        return {};
+    }
+}
+
+function saveWarnings(data) {
+    fs.writeFileSync(WARN_PATH, JSON.stringify(data, null, 2));
+}
 
 module.exports = {
     name: "warn",
 
-    async execute(sock, msg, args, user) {
+    async execute(sock, msg, args, user, data, dbPath, analytics) {
         try {
-            const chatId = msg.key.remoteJid
+            const chatId = msg.key.remoteJid;
+            const sender = msg.key.participant || msg.key.remoteJid;
 
             if (!isGroupChat(chatId)) {
-                return "❌ This command works only in groups"
+                return "❌ This command works only in groups";
             }
 
-            const metadata = await getGroupMetadata(sock, chatId)
-            const senderJid = getSenderJid(msg)
-            const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-            const targetJid = normalizeJid(getTargetJid(msg))
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
+            const metadata = await getGroupMetadata(sock, chatId);
+            const admins = listAdminJids(metadata);
 
-            if (!canManageGroup(metadata, senderJid, user)) {
-                return "🛡 Only group admins or the owner can use this command"
+            if (!admins.includes(sender)) {
+                return "⚠️ Only group admins can use this command";
             }
 
-            if (!targetJid) {
-                return "❌ Mention or reply to a member to warn"
+            const target =
+                msg.message?.extendedTextMessage?.contextInfo?.participant;
+
+            if (!target) {
+                return "⚠️ Reply to a user to warn them";
             }
 
-            if (sameUserJid(targetJid, senderJid)) {
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-            if (targetJid === senderJid) {
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-                return "⚠ You cannot warn yourself"
+            if (admins.includes(target)) {
+                return "⚠️ You cannot warn another admin";
             }
 
-            const { db, group } = getGroupState(chatId)
-            const warnEntry = ensureWarnEntry(group, targetJid)
-            const reason = cleanTargetArg(args) || "No reason provided"
+            const reason = String(args || "").trim() || "No reason provided";
+            const warnings = loadWarnings();
 
-            warnEntry.count += 1
-            warnEntry.reasons.unshift({
-                by: senderJid,
-                reason,
-                at: new Date().toISOString()
-            })
-            warnEntry.reasons = warnEntry.reasons.slice(0, 5)
-            warnEntry.updatedAt = new Date().toISOString()
-            group.updatedAt = new Date().toISOString()
+            if (!warnings[chatId]) warnings[chatId] = {};
+            if (!warnings[chatId][target]) warnings[chatId][target] = 0;
 
-            saveGroupDb(db)
+            warnings[chatId][target] += 1;
+            const count = warnings[chatId][target];
 
-            return `⚠ Warned ${participantName(metadata, targetJid)}\nTotal warnings: ${warnEntry.count}\nReason: ${reason}`
+            saveWarnings(warnings);
+
+            if (count >= MAX_WARNS) {
+                try {
+                    await sock.groupParticipantsUpdate(chatId, [target], "remove");
+                    delete warnings[chatId][target];
+                    saveWarnings(warnings);
+
+                    return `🚨 *WARN LIMIT REACHED*
+
+👤 User: ${mentionTag(target)}
+📊 Warns: ${MAX_WARNS}/${MAX_WARNS}
+📌 Reason: ${reason}
+
+🥾 User has been kicked from the group.`;
+                } catch (err) {
+                    return `⚠️ User reached ${MAX_WARNS} warns, but I failed to kick them.\n\n👤 ${mentionTag(target)}`;
+                }
+            }
+
+            const left = MAX_WARNS - count;
+
+            return `⚠️ *USER WARNED*
+
+👤 User: ${mentionTag(target)}
+📊 Warn Count: ${count}/${MAX_WARNS}
+📝 Reason: ${reason}
+⏳ Warns left before kick: ${left}`;
         } catch (err) {
-            console.log("WARN ERROR:", err)
-            return "⚠ Failed to warn member"
+            console.log("WARN ERROR:", err);
+            return "⚠️ Failed to warn user";
         }
     }
-}
+};
