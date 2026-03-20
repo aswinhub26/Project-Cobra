@@ -4,9 +4,27 @@ const {
     resolveParticipantJid,
     getTargetJid,
     isGroupChat,
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
     getTargetJid,
     isGroupChat,
     normalizeJid,
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
     participantName
 } = require("../lib/groupUtils")
 
@@ -23,7 +41,25 @@ module.exports = {
 
             const metadata = await getGroupMetadata(sock, chatId)
             const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
             const targetJid = normalizeJid(getTargetJid(msg))
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
             const { group } = getGroupState(chatId)
 
             if (targetJid) {

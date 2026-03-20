@@ -3,16 +3,52 @@ const {
     getBotJids,
     getGroupMetadata,
     resolveParticipantJid,
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
     getBotJid,
     getGroupMetadata,
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
     getSenderJid,
     getTargetJid,
     isAdmin,
     isGroupChat,
     participantName,
     sameUserJid
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
     normalizeJid,
     participantName
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 } = require("../lib/groupUtils")
 
 module.exports = {
@@ -30,15 +66,51 @@ module.exports = {
             const senderJid = getSenderJid(msg)
             const botJids = getBotJids(sock, msg)
             const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
             const botJid = getBotJid(sock)
             const targetJid = normalizeJid(getTargetJid(msg))
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 
             if (!canManageGroup(metadata, senderJid, user)) {
                 return "🛡 Only group admins or the owner can use this command"
             }
 
             if (!isAdmin(metadata, botJids)) {
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
             if (!isAdmin(metadata, botJid)) {
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
                 return "⚠ Bot must be an admin to demote members"
             }
 
@@ -47,7 +119,25 @@ module.exports = {
             }
 
             if (metadata.owner && sameUserJid(targetJid, metadata.owner)) {
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
             if (metadata.owner && targetJid === normalizeJid(metadata.owner)) {
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
                 return "👑 I cannot demote the group owner"
             }
 

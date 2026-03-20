@@ -1,7 +1,25 @@
 const {
     canManageGroup,
     getBotJids,
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
     getBotJid,
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
     getGroupMetadata,
     getGroupState,
     getSenderJid,
@@ -24,14 +42,50 @@ module.exports = {
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
             const botJids = getBotJids(sock, msg)
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
             const botJid = getBotJid(sock)
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 
             if (!canManageGroup(metadata, senderJid, user)) {
                 return "🛡 Only group admins or the owner can use this command"
             }
 
             if (!isAdmin(metadata, botJids)) {
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
             if (!isAdmin(metadata, botJid)) {
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
                 return "⚠ Bot must be an admin to mute the group"
             }
 

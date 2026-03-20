@@ -11,12 +11,30 @@ const {
     participantName,
     saveGroupDb,
     sameUserJid
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
     getSenderJid,
     getTargetJid,
     isGroupChat,
     normalizeJid,
     participantName,
     saveGroupDb
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 } = require("../lib/groupUtils")
 
 module.exports = {
@@ -33,7 +51,25 @@ module.exports = {
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
             const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
             const targetJid = normalizeJid(getTargetJid(msg))
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 
             if (!canManageGroup(metadata, senderJid, user)) {
                 return "🛡 Only group admins or the owner can use this command"
@@ -44,7 +80,25 @@ module.exports = {
             }
 
             if (sameUserJid(targetJid, senderJid)) {
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
             if (targetJid === senderJid) {
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
                 return "⚠ You cannot warn yourself"
             }
 
