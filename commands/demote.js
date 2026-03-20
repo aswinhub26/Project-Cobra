@@ -7,13 +7,12 @@ const {
     getTargetJid,
     isAdmin,
     isGroupChat,
-    matchesAnyJid,
     participantName,
     sameUserJid
 } = require("../lib/groupUtils")
 
 module.exports = {
-    name: "kick",
+    name: "demote",
 
     async execute(sock, msg, args, user) {
         try {
@@ -33,35 +32,27 @@ module.exports = {
             }
 
             if (!isAdmin(metadata, botJids)) {
-                return "⚠ Bot must be an admin to remove members"
+                return "⚠ Bot must be an admin to demote members"
             }
 
             if (!targetJid) {
-                return "❌ Mention or reply to a member to kick"
-            }
-
-            if (sameUserJid(targetJid, senderJid)) {
-                return "⚠ You cannot kick yourself"
-            }
-
-            if (matchesAnyJid(targetJid, botJids)) {
-                return "⚠ I cannot kick myself"
+                return "❌ Mention or reply to an admin to demote"
             }
 
             if (metadata.owner && sameUserJid(targetJid, metadata.owner)) {
-                return "👑 I cannot remove the group owner"
+                return "👑 I cannot demote the group owner"
             }
 
-            if (isAdmin(metadata, targetJid)) {
-                return "⚠ You cannot kick another admin with this command"
+            if (!isAdmin(metadata, targetJid)) {
+                return "ℹ This member is not an admin"
             }
 
-            await sock.groupParticipantsUpdate(chatId, [targetJid], "remove")
+            await sock.groupParticipantsUpdate(chatId, [targetJid], "demote")
 
-            return `👢 Removed ${participantName(metadata, targetJid)} from the group`
+            return `⬇ Demoted ${participantName(metadata, targetJid)} from admin`
         } catch (err) {
-            console.log("KICK ERROR:", err)
-            return "⚠ Failed to remove member"
+            console.log("DEMOTE ERROR:", err)
+            return "⚠ Failed to demote member"
         }
     }
 }

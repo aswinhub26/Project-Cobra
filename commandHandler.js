@@ -20,6 +20,42 @@ const commands = {}
 const commandsPath = path.join(__dirname, "commands")
 const pluginsPath = path.join(__dirname, "plugins")
 
+function ensureRuntimeDirs() {
+    const logsDir = path.join(__dirname, "logs")
+    const dbDir = path.join(__dirname, "database")
+
+    if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true })
+    if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true })
+}
+
+function loadModule(filePath, label) {
+    try {
+        const fileContents = fs.readFileSync(filePath, "utf-8")
+
+        if (/^(<{7}|={7}|>{7})/m.test(fileContents)) {
+            throw new Error("file contains unresolved merge conflict markers")
+        }
+
+        delete require.cache[require.resolve(filePath)]
+
+        const mod = require(filePath)
+
+        if (!mod || !mod.name || typeof mod.execute !== "function") {
+            console.log(`⚠ Skipping ${label} → invalid module export`)
+            return null
+        }
+
+        commands[mod.name] = mod
+        console.log(`✔ ${label} loaded → ${mod.name}`)
+        return mod
+    } catch (err) {
+        console.log(`⚠ Failed to load ${label} → ${path.basename(filePath)} (${err.message})`)
+        return null
+    }
+}
+
+ensureRuntimeDirs()
+
 // only load .js files
 const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"))
 const pluginFiles = fs.existsSync(pluginsPath)
@@ -29,23 +65,13 @@ const pluginFiles = fs.existsSync(pluginsPath)
 console.log("⚡ Loading Commands...\n")
 
 for (const file of commandFiles) {
-
-    const command = require(`./commands/${file}`)
-
-    commands[command.name] = command
-
-    console.log(`✔ Command loaded → ${command.name}`)
+    loadModule(path.join(commandsPath, file), "Command")
 }
 
 console.log("\n🔌 Loading Plugins...\n")
 
 for (const file of pluginFiles) {
-
-    const plugin = require(`./plugins/${file}`)
-
-    commands[plugin.name] = plugin
-
-    console.log(`✔ Plugin loaded → ${plugin.name}`)
+    loadModule(path.join(pluginsPath, file), "Plugin")
 }
 
 console.log("\n🚀 Cobra Ready for Commands 🐍\n")
@@ -131,11 +157,9 @@ chokidar.watch(pluginsFolder).on("change", (file) => {
 
     console.log(`\n🔄 Reloading plugin → ${path.basename(file)}`)
 
-    delete require.cache[require.resolve(file)]
+    const plugin = loadModule(file, "Plugin")
 
-    const plugin = require(file)
-
-    commands[plugin.name] = plugin
-
-    console.log(`✅ Plugin ${plugin.name} reloaded successfully\n`)
+    if (plugin) {
+        console.log(`✅ Plugin ${plugin.name} reloaded successfully\n`)
+    }
 })
