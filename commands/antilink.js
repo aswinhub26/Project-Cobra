@@ -1,13 +1,13 @@
 const {
     canManageGroup,
+    getGroupConfig,
     getGroupMetadata,
-    getGroupState,
     getSenderJid,
     isGroupChat,
-    saveGroupDb
-} = require("../lib/groupUtils")
+    saveStore
+} = require("../lib/groupAutomationStore")
 
-const HELP_TEXT = `🛡️ *COBRA ANTILINK*\n\n✨ Premium anti-link protection for your group.\n\n*Usage:*\n• *.antilink on* → block WhatsApp invite links\n• *.antilink all* → block all links\n• *.antilink off* → disable protection\n• *.antilink status* → view current mode\n\n🐍 Tip: admins and owner stay exempt.`
+const HELP = `🛡️ *COBRA ANTILINK*\n\n✨ Premium protection against spam links.\n\n*How to use:*\n• *.antilink on* → block WhatsApp invite links\n• *.antilink all* → block every URL\n• *.antilink off* → disable protection\n• *.antilink status* → view current setup\n\n🐍 Only admins or the owner can change this.`
 
 module.exports = {
     name: "antilink",
@@ -23,42 +23,38 @@ module.exports = {
 
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
-
             if (!canManageGroup(metadata, senderJid, user)) {
                 return "🛡️ Only group admins or the owner can use this command"
             }
 
-            const { db, group } = getGroupState(chatId)
-            const config = group.automation.antilink
+            const { db, group } = getGroupConfig(chatId)
 
             if (!action || action === "help") {
-                return HELP_TEXT
+                return HELP
             }
 
             if (action === "status") {
-                return `🛡️ *Antilink Status*\n\n• Enabled: ${config.enabled ? "Yes ✅" : "No ❌"}\n• Mode: ${config.mode === "all" ? "All links 🌐" : "WhatsApp links only 🔗"}`
+                return `🛡️ *Antilink Status*\n\n• Enabled: ${group.antilink.enabled ? "Yes ✅" : "No ❌"}\n• Mode: ${group.antilink.mode === "all" ? "All links 🌐" : "WhatsApp links only 🔗"}`
             }
 
             if (["on", "whatsapp", "wa"].includes(action)) {
-                config.enabled = true
-                config.mode = "whatsapp"
+                group.antilink.enabled = true
+                group.antilink.mode = "whatsapp"
             } else if (["all", "strict"].includes(action)) {
-                config.enabled = true
-                config.mode = "all"
+                group.antilink.enabled = true
+                group.antilink.mode = "all"
             } else if (["off", "disable"].includes(action)) {
-                config.enabled = false
+                group.antilink.enabled = false
             } else {
-                return HELP_TEXT
+                return HELP
             }
 
             group.updatedAt = new Date().toISOString()
-            saveGroupDb(db)
+            saveStore(db)
 
-            if (!config.enabled) {
-                return "🛡️ Antilink protection disabled successfully."
-            }
-
-            return `🛡️ Antilink enabled in *${config.mode === "all" ? "All Links" : "WhatsApp Only"}* mode.\n✨ Cobra will now guard this group automatically.`
+            return group.antilink.enabled
+                ? `🛡️ Antilink enabled in *${group.antilink.mode === "all" ? "All Links" : "WhatsApp Only"}* mode.\n✨ Cobra will now guard this group.`
+                : "🛡️ Antilink protection disabled successfully."
         } catch (err) {
             console.log("ANTILINK ERROR:", err)
             return "⚠️ Failed to update antilink settings"

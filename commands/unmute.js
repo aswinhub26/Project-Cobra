@@ -1,6 +1,7 @@
 const {
     canManageGroup,
     getBotJids,
+    getBotJid,
     getGroupMetadata,
     getGroupState,
     getSenderJid,
@@ -12,7 +13,7 @@ const {
 module.exports = {
     name: "unmute",
 
-    async execute(sock, msg, args, user, data, dbPath, analytics) {
+    async execute(sock, msg, args, user) {
         try {
             const chatId = msg.key.remoteJid
 
@@ -23,13 +24,15 @@ module.exports = {
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
             const botJids = getBotJids(sock, msg)
+            const botJid = getBotJid(sock)
 
             if (!canManageGroup(metadata, senderJid, user)) {
-                return "🛡️ Only group admins or the owner can use this command"
+                return "🛡 Only group admins or the owner can use this command"
             }
 
             if (!isAdmin(metadata, botJids)) {
-                return "⚠️ Bot must be an admin to unmute the group"
+            if (!isAdmin(metadata, botJid)) {
+                return "⚠ Bot must be an admin to unmute the group"
             }
 
             await sock.groupSettingUpdate(chatId, "not_announcement")
@@ -39,10 +42,10 @@ module.exports = {
             group.updatedAt = new Date().toISOString()
             saveGroupDb(db)
 
-            return "📢 Group unmuted successfully. Members can send messages again"
+            return "🔊 Group unmuted. Members can send messages again"
         } catch (err) {
             console.log("UNMUTE ERROR:", err)
-            return "⚠️ Failed to unmute group"
+            return "⚠ Failed to unmute group"
         }
     }
 }

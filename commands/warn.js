@@ -1,23 +1,28 @@
 const {
-    DEFAULT_WARN_LIMIT,
     canManageGroup,
     cleanTargetArg,
     ensureWarnEntry,
     getGroupMetadata,
     getGroupState,
+    resolveParticipantJid,
     getSenderJid,
     getTargetJid,
     isGroupChat,
     participantName,
-    resolveParticipantJid,
     saveGroupDb,
     sameUserJid
+    getSenderJid,
+    getTargetJid,
+    isGroupChat,
+    normalizeJid,
+    participantName,
+    saveGroupDb
 } = require("../lib/groupUtils")
 
 module.exports = {
     name: "warn",
 
-    async execute(sock, msg, args, user, data, dbPath, analytics) {
+    async execute(sock, msg, args, user) {
         try {
             const chatId = msg.key.remoteJid
 
@@ -28,9 +33,10 @@ module.exports = {
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
             const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
+            const targetJid = normalizeJid(getTargetJid(msg))
 
             if (!canManageGroup(metadata, senderJid, user)) {
-                return "🛡️ Only group admins or the owner can use this command"
+                return "🛡 Only group admins or the owner can use this command"
             }
 
             if (!targetJid) {
@@ -38,33 +44,30 @@ module.exports = {
             }
 
             if (sameUserJid(targetJid, senderJid)) {
-                return "⚠️ You cannot warn yourself"
+            if (targetJid === senderJid) {
+                return "⚠ You cannot warn yourself"
             }
 
             const { db, group } = getGroupState(chatId)
             const warnEntry = ensureWarnEntry(group, targetJid)
             const reason = cleanTargetArg(args) || "No reason provided"
-            const timestamp = new Date().toISOString()
 
             warnEntry.count += 1
             warnEntry.reasons.unshift({
                 by: senderJid,
                 reason,
-                at: timestamp
+                at: new Date().toISOString()
             })
             warnEntry.reasons = warnEntry.reasons.slice(0, 5)
-            warnEntry.updatedAt = timestamp
-            group.updatedAt = timestamp
+            warnEntry.updatedAt = new Date().toISOString()
+            group.updatedAt = new Date().toISOString()
+
             saveGroupDb(db)
 
-            const limitNotice = warnEntry.count >= DEFAULT_WARN_LIMIT
-                ? `\n🚨 Warning limit reached (${DEFAULT_WARN_LIMIT}/${DEFAULT_WARN_LIMIT}).`
-                : `\n📌 Limit: ${warnEntry.count}/${DEFAULT_WARN_LIMIT}`
-
-            return `⚠️ Warned ${participantName(metadata, targetJid)}\n📝 Reason: ${reason}\n📒 Total warnings: ${warnEntry.count}${limitNotice}`
+            return `⚠ Warned ${participantName(metadata, targetJid)}\nTotal warnings: ${warnEntry.count}\nReason: ${reason}`
         } catch (err) {
             console.log("WARN ERROR:", err)
-            return "⚠️ Failed to warn member"
+            return "⚠ Failed to warn member"
         }
     }
 }

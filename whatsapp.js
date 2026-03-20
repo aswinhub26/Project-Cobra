@@ -114,7 +114,7 @@ async function startBot() {
 
     sock.ev.on("creds.update", saveCreds);
 
-    groupAutomationPlugin.startScheduledDispatcher(sock);
+    groupAutomationPlugin.startScheduler(sock);
 
     sock.ev.on("group-participants.update", async (update) => {
         await groupAutomationPlugin.handleGroupParticipantsUpdate(sock, update);

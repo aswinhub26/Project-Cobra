@@ -2,14 +2,14 @@ const {
     DEFAULT_GOODBYE_MESSAGE,
     DEFAULT_WELCOME_MESSAGE,
     canManageGroup,
+    getGroupConfig,
     getGroupMetadata,
-    getGroupState,
     getSenderJid,
     isGroupChat,
-    saveGroupDb
-} = require("../lib/groupUtils")
+    saveStore
+} = require("../lib/groupAutomationStore")
 
-const HELP_TEXT = `🎉 *COBRA WELCOME*\n\n✨ Stylish join/leave greetings with premium vibes.\n\n*Usage:*\n• *.welcome on*\n• *.welcome off*\n• *.welcome status*\n• *.welcome message Welcome {user} to *{group}*!*\n• *.welcome goodbye Bye {user}*\n• *.welcome reset*\n\n*Placeholders:*\n• {user}\n• {group}\n• {count}`
+const HELP = `🎉 *COBRA WELCOME*\n\n✨ Stylish premium welcome and goodbye messages.\n\n*How to use:*\n• *.welcome on*\n• *.welcome off*\n• *.welcome status*\n• *.welcome message Welcome {user} to *{group}*!*\n• *.welcome goodbye Bye {user}*\n• *.welcome reset*\n\n*Placeholders:* {user}, {group}, {count}`
 
 module.exports = {
     name: "welcome",
@@ -17,8 +17,8 @@ module.exports = {
     async execute(sock, msg, args, user, data, dbPath, analytics) {
         try {
             const chatId = msg.key.remoteJid
-            const rawArgs = String(args || "").trim()
-            const lower = rawArgs.toLowerCase()
+            const raw = String(args || "").trim()
+            const lower = raw.toLowerCase()
 
             if (!isGroupChat(chatId)) {
                 return "❌ This command works only in groups"
@@ -26,41 +26,39 @@ module.exports = {
 
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
-
             if (!canManageGroup(metadata, senderJid, user)) {
                 return "🛡️ Only group admins or the owner can use this command"
             }
 
-            const { db, group } = getGroupState(chatId)
-            const config = group.automation.welcome
+            const { db, group } = getGroupConfig(chatId)
 
-            if (!rawArgs || lower === "help") {
-                return HELP_TEXT
+            if (!raw || lower === "help") {
+                return HELP
             }
 
             if (lower === "status") {
-                return `🎉 *Welcome Status*\n\n• Enabled: ${config.enabled ? "Yes ✅" : "No ❌"}\n• Welcome Text: ${config.welcomeMessage}\n• Goodbye Text: ${config.goodbyeMessage}`
+                return `🎉 *Welcome Status*\n\n• Enabled: ${group.welcome.enabled ? "Yes ✅" : "No ❌"}\n• Welcome Text: ${group.welcome.welcomeMessage}\n• Goodbye Text: ${group.welcome.goodbyeMessage}`
             }
 
             if (lower === "on") {
-                config.enabled = true
+                group.welcome.enabled = true
             } else if (lower === "off") {
-                config.enabled = false
+                group.welcome.enabled = false
             } else if (lower === "reset") {
-                config.welcomeMessage = DEFAULT_WELCOME_MESSAGE
-                config.goodbyeMessage = DEFAULT_GOODBYE_MESSAGE
+                group.welcome.welcomeMessage = DEFAULT_WELCOME_MESSAGE
+                group.welcome.goodbyeMessage = DEFAULT_GOODBYE_MESSAGE
             } else if (lower.startsWith("message ")) {
-                config.welcomeMessage = rawArgs.slice(8).trim() || DEFAULT_WELCOME_MESSAGE
+                group.welcome.welcomeMessage = raw.slice(8).trim() || DEFAULT_WELCOME_MESSAGE
             } else if (lower.startsWith("goodbye ")) {
-                config.goodbyeMessage = rawArgs.slice(8).trim() || DEFAULT_GOODBYE_MESSAGE
+                group.welcome.goodbyeMessage = raw.slice(8).trim() || DEFAULT_GOODBYE_MESSAGE
             } else {
-                return HELP_TEXT
+                return HELP
             }
 
             group.updatedAt = new Date().toISOString()
-            saveGroupDb(db)
+            saveStore(db)
 
-            return `🎉 Welcome system updated successfully.\n\n• Enabled: ${config.enabled ? "Yes ✅" : "No ❌"}\n• Welcome Template Ready\n• Goodbye Template Ready\n\n🐍 Use *.welcome status* to preview the current setup.`
+            return `🎉 Welcome system updated successfully.\n\n• Enabled: ${group.welcome.enabled ? "Yes ✅" : "No ❌"}\n🐍 Use *.welcome status* to preview the templates.`
         } catch (err) {
             console.log("WELCOME ERROR:", err)
             return "⚠️ Failed to update welcome settings"

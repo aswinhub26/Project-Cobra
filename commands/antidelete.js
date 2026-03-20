@@ -1,13 +1,13 @@
 const {
     canManageGroup,
+    getGroupConfig,
     getGroupMetadata,
-    getGroupState,
     getSenderJid,
     isGroupChat,
-    saveGroupDb
-} = require("../lib/groupUtils")
+    saveStore
+} = require("../lib/groupAutomationStore")
 
-const HELP_TEXT = `🕵️ *COBRA ANTIDELETE*\n\n✨ Recover deleted chat evidence with premium alert style.\n\n*Usage:*\n• *.antidelete on*\n• *.antidelete off*\n• *.antidelete status*\n\n🐍 When enabled, Cobra will repost deleted text/media alerts in the group.`
+const HELP = `🕵️ *COBRA ANTIDELETE*\n\n✨ Recover deleted chat alerts with premium style.\n\n*How to use:*\n• *.antidelete on*\n• *.antidelete off*\n• *.antidelete status*\n\n🐍 Works while the bot is online and tracking group messages.`
 
 module.exports = {
     name: "antidelete",
@@ -23,34 +23,34 @@ module.exports = {
 
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
-
             if (!canManageGroup(metadata, senderJid, user)) {
                 return "🛡️ Only group admins or the owner can use this command"
             }
 
-            const { db, group } = getGroupState(chatId)
-            const config = group.automation.antidelete
+            const { db, group } = getGroupConfig(chatId)
 
             if (!action || action === "help") {
-                return HELP_TEXT
+                return HELP
             }
 
             if (action === "status") {
-                return `🕵️ *Antidelete Status*\n\n• Enabled: ${config.enabled ? "Yes ✅" : "No ❌"}\n• Cache: Live memory tracking active while bot is online.`
+                return `🕵️ *Antidelete Status*\n\n• Enabled: ${group.antidelete.enabled ? "Yes ✅" : "No ❌"}\n• Cache: Live in-memory recovery while the bot stays online.`
             }
 
             if (["on", "enable"].includes(action)) {
-                config.enabled = true
+                group.antidelete.enabled = true
             } else if (["off", "disable"].includes(action)) {
-                config.enabled = false
+                group.antidelete.enabled = false
             } else {
-                return HELP_TEXT
+                return HELP
             }
 
             group.updatedAt = new Date().toISOString()
-            saveGroupDb(db)
+            saveStore(db)
 
-            return `🕵️ Antidelete ${config.enabled ? "enabled ✅" : "disabled ❌"}.\n✨ Cobra will ${config.enabled ? "watch deleted messages" : "stop monitoring deletions"}.`
+            return group.antidelete.enabled
+                ? "🕵️ Antidelete enabled ✅\n✨ Cobra will now watch deleted messages."
+                : "🕵️ Antidelete disabled ❌\n✨ Cobra will stop monitoring deletions."
         } catch (err) {
             console.log("ANTIDELETE ERROR:", err)
             return "⚠️ Failed to update antidelete settings"

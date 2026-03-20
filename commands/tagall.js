@@ -11,7 +11,7 @@ const {
 module.exports = {
     name: "tagall",
 
-    async execute(sock, msg, args, user, data, dbPath, analytics) {
+    async execute(sock, msg, args, user) {
         try {
             const chatId = msg.key.remoteJid
 
@@ -23,27 +23,24 @@ module.exports = {
             const senderJid = getSenderJid(msg)
 
             if (!canManageGroup(metadata, senderJid, user)) {
-                return "🛡️ Only group admins or the owner can use this command"
+                return "🛡 Only group admins or the owner can use this command"
             }
 
-            const mentions = metadata.participants
-                .map((participant) => normalizeJid(participant.id || participant.jid || participant.lid))
-                .filter(Boolean)
-
-            const header = String(args || "").trim() || "📢 Attention everyone"
-            const body = mentions
+            const members = (metadata.participants || []).map((participant) => normalizeJid(participant.id))
+            const header = args?.trim() ? `📢 ${args.trim()}` : "📢 Attention everyone"
+            const body = members
                 .map((jid, index) => `${index + 1}. ${mentionTag(jid)} — ${participantName(metadata, jid)}`)
                 .join("\n")
 
             await sock.sendMessage(chatId, {
                 text: `${header}\n\n${body}`,
-                mentions
+                mentions: members
             }, { quoted: msg })
 
             return null
         } catch (err) {
             console.log("TAGALL ERROR:", err)
-            return "⚠️ Failed to tag all members"
+            return "⚠ Failed to tag all members"
         }
     }
 }

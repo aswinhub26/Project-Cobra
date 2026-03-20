@@ -1,63 +1,68 @@
 const Groq = require("groq-sdk")
 
-function getGroqClient() {
-    const apiKey = process.env.GROQ_API_KEY
-
-    if (!apiKey) {
-        return null
-    }
-
-    return new Groq({ apiKey })
-}
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
+})
 
 module.exports = {
-    name: "ai",
+name: "ai",
 
-    async execute(sock, msg, args, user, data, dbPath, analytics) {
-        try {
-            const chatId = msg.key.remoteJid
-            const query = String(args || "").trim()
+async execute(sock, msg, args, user, data, dbPath, analytics){
 
-            if (!query) {
-                return `🤖 *Cobra AI Assistant*\n\n✨ Ask anything!\n\nExample:\n.ai explain cybersecurity\n.ai write a HTML code\n.ai tell me a tech joke`
-            }
+try{
 
-            const groq = getGroqClient()
+const chatId = msg.key.remoteJid
+const query = args
 
-            if (!groq) {
-                return "⚠️ GROQ_API_KEY is not configured yet. Add it to your environment to use .ai."
-            }
+if(!query){
+return `🤖 *Cobra AI Assistant*
 
-            await sock.sendMessage(chatId, {
-                react: { text: "🧠", key: msg.key }
-            })
+✨ Ask anything!
 
-            await sock.sendPresenceUpdate("composing", chatId)
+Example:
+.ai explain cybersecurity
+.ai write a HTML code
+.ai tell me a tech joke`
+}
 
-            const completion = await groq.chat.completions.create({
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are Cobra AI 🤖, a smart assistant built for a WhatsApp bot. Answer clearly and helpfully."
-                    },
-                    {
-                        role: "user",
-                        content: query
-                    }
-                ],
-                model: "llama-3.1-8b-instant"
-            })
+// React to message
+await sock.sendMessage(chatId,{
+react:{ text:"🧠", key: msg.key }
+})
 
-            const answer = completion.choices?.[0]?.message?.content || "⚠️ No response received from Cobra AI."
+// typing indicator
+await sock.sendPresenceUpdate("composing", chatId)
 
-            await sock.sendMessage(chatId, {
-                text: `🧠 *Cobra AI Response*\n\n${answer}\n\n⚡ Powered by AshGPT`
-            }, { quoted: msg })
+const completion = await groq.chat.completions.create({
+messages:[
+{
+role:"system",
+content:"You are Cobra AI 🤖, a smart assistant built for a WhatsApp bot. Answer clearly and helpfully."
+},
+{
+role:"user",
+content: query
+}
+],
+model:"llama-3.1-8b-instant"
+})
 
-            return null
-        } catch (err) {
-            console.log("AI ERROR:", err)
-            return "❌ ⚠️ Cobra AI service temporarily unavailable"
-        }
-    }
+const answer = completion.choices[0].message.content
+
+await sock.sendMessage(chatId,{
+text:`🧠 *Cobra AI Response*\n\n${answer}\n\n⚡ Powered by AshGPT`
+},{ quoted: msg })
+
+return null
+
+}catch(err){
+
+console.log("AI ERROR:",err)
+
+return "❌ ⚠️ Cobra AI service temporarily unavailable"
+
+}
+
+}
+
 }

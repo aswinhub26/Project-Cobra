@@ -1,17 +1,17 @@
 const {
     applyTemplate,
+    getGroupConfig,
     getGroupMetadata,
-    getGroupState,
     isAdmin,
     isGroupChat,
-    loadGroupDb,
+    loadStore,
     mentionTag,
-    saveGroupDb
-} = require("../lib/groupUtils")
+    saveStore
+} = require("../lib/groupAutomationStore")
 
 const messageCache = new Map()
+let currentSock = null
 let schedulerStarted = false
-let schedulerSock = null
 
 function extractText(msg) {
     return (
@@ -25,20 +25,14 @@ function extractText(msg) {
 }
 
 function extractSender(msg) {
-    return (
-        msg?.key?.participant ||
-        msg?.participant ||
-        msg?.key?.remoteJidAlt ||
-        msg?.pushName ||
-        "Unknown"
-    )
+    return msg?.key?.participant || msg?.participant || msg?.key?.remoteJidAlt || ""
 }
 
-function cacheMessage(msg) {
-    const keyId = msg?.key?.id
+function cacheGroupMessage(msg) {
     const chatId = msg?.key?.remoteJid
+    const keyId = msg?.key?.id
 
-    if (!keyId || !chatId || !isGroupChat(chatId)) {
+    if (!chatId || !keyId || !isGroupChat(chatId)) {
         return
     }
 
@@ -46,7 +40,6 @@ function cacheMessage(msg) {
         chatId,
         senderJid: extractSender(msg),
         text: extractText(msg),
-        pushName: msg?.pushName || "Unknown",
         type: Object.keys(msg?.message || {})[0] || "text",
         createdAt: Date.now()
     })
@@ -57,27 +50,23 @@ function cacheMessage(msg) {
     }
 }
 
-function matchesLinkMode(text, mode) {
-    const content = String(text || "")
-    const hasWhatsAppInvite = /chat\.whatsapp\.com\//i.test(content)
-    const hasAnyUrl = /https?:\/\/|www\./i.test(content)
+function matchesLink(text, mode) {
+    const value = String(text || "")
+    const hasWhatsAppInvite = /chat\.whatsapp\.com\//i.test(value)
+    const hasUrl = /https?:\/\/|www\./i.test(value)
 
-    if (mode === "all") {
-        return hasAnyUrl
-    }
-
-    return hasWhatsAppInvite
+    return mode === "all" ? hasUrl : hasWhatsAppInvite
 }
 
-function findTriggeredFilter(text, filters) {
-    const normalized = String(text || "").trim().toLowerCase()
-    if (!normalized) {
+function findFilter(text, filters) {
+    const value = String(text || "").trim().toLowerCase()
+    if (!value) {
         return null
     }
 
-    for (const [keyword, response] of Object.entries(filters || {})) {
-        if (normalized.includes(keyword.toLowerCase())) {
-            return { keyword, response }
+    for (const [keyword, reply] of Object.entries(filters || {})) {
+        if (value.includes(keyword.toLowerCase())) {
+            return { keyword, reply }
         }
     }
 
@@ -86,7 +75,7 @@ function findTriggeredFilter(text, filters) {
 
 async function handleIncomingMessage(sock, msg, text) {
     try {
-        cacheMessage(msg)
+        cacheGroupMessage(msg)
 
         if (String(text || "").startsWith(".")) {
             return
@@ -97,39 +86,34 @@ async function handleIncomingMessage(sock, msg, text) {
             return
         }
 
-        const { db, group } = getGroupState(chatId)
-        const automation = group.automation
-        const senderJid = msg?.key?.participant || msg?.participant || ""
+        const { db, group } = getGroupConfig(chatId)
+        const senderJid = extractSender(msg)
 
-        if (automation.antilink?.enabled) {
+        if (group.antilink.enabled) {
             const metadata = await getGroupMetadata(sock, chatId)
-            const senderIsAdmin = isAdmin(metadata, senderJid)
-            const senderIsBot = Boolean(msg?.key?.fromMe)
-
-            if (!senderIsAdmin && !senderIsBot && matchesLinkMode(text, automation.antilink.mode)) {
-                automation.antilink.violations[senderJid] = (automation.antilink.violations[senderJid] || 0) + 1
+            if (!isAdmin(metadata, senderJid) && !msg?.key?.fromMe && matchesLink(text, group.antilink.mode)) {
+                group.antilink.violations[senderJid] = (group.antilink.violations[senderJid] || 0) + 1
                 group.updatedAt = new Date().toISOString()
-                saveGroupDb(db)
+                saveStore(db)
 
                 try {
                     await sock.sendMessage(chatId, { delete: msg.key })
                 } catch (_) {
-                    // Delete can fail depending on bot permissions.
+                    // Deletion depends on bot rights.
                 }
 
                 await sock.sendMessage(chatId, {
-                    text: `🛡️ *Cobra Antilink Alert*\n\n🚫 Link blocked successfully.\n👤 Offender: ${mentionTag(senderJid)}\n📌 Violations: ${automation.antilink.violations[senderJid]}\n✨ Keep the group clean and premium.`,
+                    text: `🛡️ *Cobra Antilink Alert*\n\n🚫 Link blocked successfully.\n👤 Offender: ${mentionTag(senderJid)}\n📌 Violations: ${group.antilink.violations[senderJid]}\n✨ Keep the group premium and clean.`,
                     mentions: [senderJid]
                 }, { quoted: msg })
-
                 return
             }
         }
 
-        const matchedFilter = findTriggeredFilter(text, automation.filters)
-        if (matchedFilter) {
+        const matched = findFilter(text, group.filters)
+        if (matched) {
             await sock.sendMessage(chatId, {
-                text: `🤖 *Auto Filter Reply*\n\n🔑 Trigger: ${matchedFilter.keyword}\n💬 ${matchedFilter.response}`
+                text: `🤖 *Auto Filter Reply*\n\n🔑 Trigger: ${matched.keyword}\n💬 ${matched.reply}`
             }, { quoted: msg })
         }
     } catch (err) {
@@ -140,33 +124,24 @@ async function handleIncomingMessage(sock, msg, text) {
 async function handleGroupParticipantsUpdate(sock, update) {
     try {
         const chatId = update?.id
-        if (!isGroupChat(chatId)) {
+        if (!isGroupChat(chatId) || !["add", "remove"].includes(update?.action)) {
             return
         }
 
-        if (!["add", "remove"].includes(update?.action)) {
-            return
-        }
-
-        const { group } = getGroupState(chatId)
-        const welcome = group.automation?.welcome
-        if (!welcome?.enabled) {
+        const { group } = getGroupConfig(chatId)
+        if (!group.welcome.enabled) {
             return
         }
 
         const metadata = await getGroupMetadata(sock, chatId)
-        const mentions = update.participants || []
-        const memberCount = metadata.participants.length
+        const count = metadata.participants.length
 
-        for (const jid of mentions) {
-            const template = update.action === "add"
-                ? welcome.welcomeMessage
-                : welcome.goodbyeMessage
-
+        for (const jid of update.participants || []) {
+            const template = update.action === "add" ? group.welcome.welcomeMessage : group.welcome.goodbyeMessage
             const text = applyTemplate(template, {
                 user: mentionTag(jid),
                 group: metadata.subject || "this group",
-                count: memberCount
+                count
             })
 
             await sock.sendMessage(chatId, {
@@ -175,7 +150,7 @@ async function handleGroupParticipantsUpdate(sock, update) {
             })
         }
     } catch (err) {
-        console.log("GROUP PARTICIPANT UPDATE ERROR:", err)
+        console.log("GROUP AUTOMATION PARTICIPANT ERROR:", err)
     }
 }
 
@@ -189,8 +164,8 @@ async function handleMessageDelete(sock, payload) {
                 continue
             }
 
-            const { group } = getGroupState(chatId)
-            if (!group.automation?.antidelete?.enabled) {
+            const { group } = getGroupConfig(chatId)
+            if (!group.antidelete.enabled) {
                 continue
             }
 
@@ -199,19 +174,18 @@ async function handleMessageDelete(sock, payload) {
                 continue
             }
 
-            const deletedText = cached.text || `📦 Deleted ${cached.type} message.`
             await sock.sendMessage(chatId, {
-                text: `🕵️ *Cobra Antidelete Alert*\n\n👤 Sender: ${mentionTag(cached.senderJid)}\n📝 Content: ${deletedText}\n✨ Message recovered while bot was online.`,
+                text: `🕵️ *Cobra Antidelete Alert*\n\n👤 Sender: ${mentionTag(cached.senderJid)}\n📝 Content: ${cached.text || `Deleted ${cached.type} message.`}\n✨ Message recovered while the bot was online.`,
                 mentions: [cached.senderJid]
             })
         }
     } catch (err) {
-        console.log("ANTIDELETE EVENT ERROR:", err)
+        console.log("GROUP AUTOMATION DELETE ERROR:", err)
     }
 }
 
-function startScheduledDispatcher(sock) {
-    schedulerSock = sock
+function startScheduler(sock) {
+    currentSock = sock
 
     if (schedulerStarted) {
         return
@@ -221,43 +195,38 @@ function startScheduledDispatcher(sock) {
 
     setInterval(async () => {
         try {
-            const db = loadGroupDb()
+            const db = loadStore()
             let changed = false
             const now = Date.now()
 
             for (const [chatId, group] of Object.entries(db.groups || {})) {
-                if (!Array.isArray(group?.automation?.schedules) || !group.automation.schedules.length) {
+                if (!Array.isArray(group.schedules) || !group.schedules.length) {
                     continue
                 }
 
                 const pending = []
 
-                for (const item of group.automation.schedules) {
+                for (const item of group.schedules) {
                     const runAt = new Date(item.runAt).getTime()
-                    if (Number.isNaN(runAt) || runAt > now) {
+                    if (Number.isNaN(runAt) || runAt > now || !currentSock) {
                         pending.push(item)
                         continue
                     }
 
-                    if (!schedulerSock) {
-                        pending.push(item)
-                        continue
-                    }
-
-                    await schedulerSock.sendMessage(chatId, {
+                    await currentSock.sendMessage(chatId, {
                         text: `⏰ *Scheduled Cobra Drop*\n\n${item.text}\n\n✨ Delivered right on time.`
                     })
                     changed = true
                 }
 
-                group.automation.schedules = pending
+                group.schedules = pending
             }
 
             if (changed) {
-                saveGroupDb(db)
+                saveStore(db)
             }
         } catch (err) {
-            console.log("SCHEDULE DISPATCH ERROR:", err)
+            console.log("GROUP AUTOMATION SCHEDULER ERROR:", err)
         }
     }, 15000)
 }
@@ -269,8 +238,8 @@ module.exports = {
         return "⚙️ Group automation runs in the background. Use .antilink, .welcome, .filter, .schedule, or .antidelete."
     },
 
-    handleIncomingMessage,
     handleGroupParticipantsUpdate,
+    handleIncomingMessage,
     handleMessageDelete,
-    startScheduledDispatcher
+    startScheduler
 }
