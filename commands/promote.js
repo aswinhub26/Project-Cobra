@@ -2,21 +2,18 @@ const {
     canManageGroup,
     getBotJids,
     getGroupMetadata,
-    resolveParticipantJid,
-    getBotJid,
-    getGroupMetadata,
     getSenderJid,
     getTargetJid,
     isAdmin,
     isGroupChat,
-    normalizeJid,
-    participantName
+    participantName,
+    resolveParticipantJid
 } = require("../lib/groupUtils")
 
 module.exports = {
     name: "promote",
 
-    async execute(sock, msg, args, user) {
+    async execute(sock, msg, args, user, data, dbPath, analytics) {
         try {
             const chatId = msg.key.remoteJid
 
@@ -28,16 +25,13 @@ module.exports = {
             const senderJid = getSenderJid(msg)
             const botJids = getBotJids(sock, msg)
             const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
-            const botJid = getBotJid(sock)
-            const targetJid = normalizeJid(getTargetJid(msg))
 
             if (!canManageGroup(metadata, senderJid, user)) {
-                return "🛡 Only group admins or the owner can use this command"
+                return "🛡️ Only group admins or the owner can use this command"
             }
 
             if (!isAdmin(metadata, botJids)) {
-            if (!isAdmin(metadata, botJid)) {
-                return "⚠ Bot must be an admin to promote members"
+                return "⚠️ Bot must be an admin to promote members"
             }
 
             if (!targetJid) {
@@ -45,15 +39,14 @@ module.exports = {
             }
 
             if (isAdmin(metadata, targetJid)) {
-                return "ℹ This member is already an admin"
+                return "ℹ️ This member is already an admin"
             }
 
             await sock.groupParticipantsUpdate(chatId, [targetJid], "promote")
-
-            return `🛡 Promoted ${participantName(metadata, targetJid)} to admin`
+            return `✅ Promoted ${participantName(metadata, targetJid)} to admin`
         } catch (err) {
             console.log("PROMOTE ERROR:", err)
-            return "⚠ Failed to promote member"
+            return "⚠️ Failed to promote member"
         }
     }
 }

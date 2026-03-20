@@ -2,23 +2,19 @@ const {
     canManageGroup,
     getBotJids,
     getGroupMetadata,
-    resolveParticipantJid,
-    getBotJid,
-    getGroupMetadata,
     getSenderJid,
     getTargetJid,
     isAdmin,
     isGroupChat,
     participantName,
+    resolveParticipantJid,
     sameUserJid
-    normalizeJid,
-    participantName
 } = require("../lib/groupUtils")
 
 module.exports = {
     name: "demote",
 
-    async execute(sock, msg, args, user) {
+    async execute(sock, msg, args, user, data, dbPath, analytics) {
         try {
             const chatId = msg.key.remoteJid
 
@@ -30,16 +26,13 @@ module.exports = {
             const senderJid = getSenderJid(msg)
             const botJids = getBotJids(sock, msg)
             const targetJid = resolveParticipantJid(metadata, getTargetJid(msg))
-            const botJid = getBotJid(sock)
-            const targetJid = normalizeJid(getTargetJid(msg))
 
             if (!canManageGroup(metadata, senderJid, user)) {
-                return "🛡 Only group admins or the owner can use this command"
+                return "🛡️ Only group admins or the owner can use this command"
             }
 
             if (!isAdmin(metadata, botJids)) {
-            if (!isAdmin(metadata, botJid)) {
-                return "⚠ Bot must be an admin to demote members"
+                return "⚠️ Bot must be an admin to demote members"
             }
 
             if (!targetJid) {
@@ -47,20 +40,18 @@ module.exports = {
             }
 
             if (metadata.owner && sameUserJid(targetJid, metadata.owner)) {
-            if (metadata.owner && targetJid === normalizeJid(metadata.owner)) {
                 return "👑 I cannot demote the group owner"
             }
 
             if (!isAdmin(metadata, targetJid)) {
-                return "ℹ This member is not an admin"
+                return "ℹ️ This member is not an admin"
             }
 
             await sock.groupParticipantsUpdate(chatId, [targetJid], "demote")
-
-            return `⬇ Demoted ${participantName(metadata, targetJid)} from admin`
+            return `✅ Demoted ${participantName(metadata, targetJid)} from admin`
         } catch (err) {
             console.log("DEMOTE ERROR:", err)
-            return "⚠ Failed to demote member"
+            return "⚠️ Failed to demote member"
         }
     }
 }

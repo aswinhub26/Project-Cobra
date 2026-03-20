@@ -1,7 +1,6 @@
 const {
     canManageGroup,
     getBotJids,
-    getBotJid,
     getGroupMetadata,
     getGroupState,
     getSenderJid,
@@ -13,7 +12,7 @@ const {
 module.exports = {
     name: "mute",
 
-    async execute(sock, msg, args, user) {
+    async execute(sock, msg, args, user, data, dbPath, analytics) {
         try {
             const chatId = msg.key.remoteJid
 
@@ -24,15 +23,13 @@ module.exports = {
             const metadata = await getGroupMetadata(sock, chatId)
             const senderJid = getSenderJid(msg)
             const botJids = getBotJids(sock, msg)
-            const botJid = getBotJid(sock)
 
             if (!canManageGroup(metadata, senderJid, user)) {
-                return "🛡 Only group admins or the owner can use this command"
+                return "🛡️ Only group admins or the owner can use this command"
             }
 
             if (!isAdmin(metadata, botJids)) {
-            if (!isAdmin(metadata, botJid)) {
-                return "⚠ Bot must be an admin to mute the group"
+                return "⚠️ Bot must be an admin to mute the group"
             }
 
             await sock.groupSettingUpdate(chatId, "announcement")
@@ -42,10 +39,10 @@ module.exports = {
             group.updatedAt = new Date().toISOString()
             saveGroupDb(db)
 
-            return "🔇 Group muted. Only admins can send messages now"
+            return "🔇 Group muted successfully. Only admins can send messages now"
         } catch (err) {
             console.log("MUTE ERROR:", err)
-            return "⚠ Failed to mute group"
+            return "⚠️ Failed to mute group"
         }
     }
 }

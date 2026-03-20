@@ -14,6 +14,7 @@ const pino = require("pino");
 const handleCommand = require("./commandHandler");
 const settings = require("./settings");
 const autoStatusPlugin = require("./plugins/autostatus");
+const groupAutomationPlugin = require("./plugins/groupAutomation");
 
 let bannerSent = false;
 
@@ -113,6 +114,16 @@ async function startBot() {
 
     sock.ev.on("creds.update", saveCreds);
 
+    groupAutomationPlugin.startScheduledDispatcher(sock);
+
+    sock.ev.on("group-participants.update", async (update) => {
+        await groupAutomationPlugin.handleGroupParticipantsUpdate(sock, update);
+    });
+
+    sock.ev.on("messages.delete", async (payload) => {
+        await groupAutomationPlugin.handleMessageDelete(sock, payload);
+    });
+
     sock.ev.on("messages.upsert", async ({ messages }) => {
         try {
             const msg = messages[0];
@@ -120,7 +131,13 @@ async function startBot() {
 
             const text =
                 msg.message.conversation ||
-                msg.message.extendedTextMessage?.text;
+                msg.message.extendedTextMessage?.text ||
+                msg.message.imageMessage?.caption ||
+                msg.message.videoMessage?.caption ||
+                msg.message.documentMessage?.caption ||
+                "";
+
+            await groupAutomationPlugin.handleIncomingMessage(sock, msg, text);
 
             if (!text) return;
 

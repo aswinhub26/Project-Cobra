@@ -12,50 +12,10 @@ function compactText(value) {
         .trim()
 }
 
-function buildGroupInfoText(metadata, chatId, args) {
-    const adminJids = listAdminJids(metadata)
-    const ownerJid = metadata.owner || metadata.subjectOwner || ""
-    const memberCount = metadata.participants?.length || 0
-    const adminCount = adminJids.length
-    const regularCount = Math.max(memberCount - adminCount, 0)
-    const ownerLine = ownerJid
-        ? `${mentionTag(ownerJid)} (${participantName(metadata, ownerJid)})`
-        : "Unavailable"
-    const description = compactText(metadata.desc) || "No description set"
-    const wantsFullId = /\b(full|id)\b/i.test(String(args || ""))
-
-    let text = `👥 *Group Info*
-
-📛 Name: ${metadata.subject || "Unnamed Group"}
-👑 Owner: ${ownerLine}
-👥 Total Members: ${memberCount}
-🛡 Admins: ${adminCount}
-🙋 Regular Members: ${regularCount}
-🔇 Muted: ${metadata.announce ? "Yes" : "No"}
-🔒 Locked Edit Info: ${metadata.restrict ? "Yes" : "No"}
-📝 Description: ${description}`
-
-    if (wantsFullId) {
-        text += `\n🆔 Group JID: \`${chatId}\``
-    }
-
-    return {
-        ownerJid,
-        text
-    }
-}
 module.exports = {
     name: "groupinfo",
 
-    async execute(sock, msg, args) {
-    participantName
-} = require("../lib/groupUtils")
-
-module.exports = {
-    name: "groupinfo",
-
-    async execute(sock, msg, args) {
-    async execute(sock, msg) {
+    async execute(sock, msg, args, user, data, dbPath, analytics) {
         try {
             const chatId = msg.key.remoteJid
 
@@ -64,31 +24,26 @@ module.exports = {
             }
 
             const metadata = await getGroupMetadata(sock, chatId)
-            const { ownerJid, text } = buildGroupInfoText(metadata, chatId, args)
-
-            if (!sock?.sendMessage) {
-                return text
             const adminJids = listAdminJids(metadata)
             const ownerJid = metadata.owner || metadata.subjectOwner || ""
-            const memberCount = metadata.participants?.length || 0
+            const memberCount = metadata.participants.length
             const adminCount = adminJids.length
             const regularCount = Math.max(memberCount - adminCount, 0)
-            const ownerLine = ownerJid
-                ? `${mentionTag(ownerJid)} (${participantName(metadata, ownerJid)})`
-                : "Unavailable"
             const description = compactText(metadata.desc) || "No description set"
             const wantsFullId = /\b(full|id)\b/i.test(String(args || ""))
+            const ownerLabel = ownerJid
+                ? `${mentionTag(ownerJid)} (${participantName(metadata, ownerJid)})`
+                : "Unavailable"
 
-            let text = `👥 *Group Info*
-
-📛 Name: ${metadata.subject || "Unnamed Group"}
-👑 Owner: ${ownerLine}
-👥 Total Members: ${memberCount}
-🛡 Admins: ${adminCount}
-🙋 Regular Members: ${regularCount}
-🔇 Muted: ${metadata.announce ? "Yes" : "No"}
-🔒 Locked Edit Info: ${metadata.restrict ? "Yes" : "No"}
-📝 Description: ${description}`
+            let text = `👥 *Group Info*\n\n` +
+                `📛 Name: ${metadata.subject || "Unnamed Group"}\n` +
+                `👑 Owner: ${ownerLabel}\n` +
+                `👥 Total Members: ${memberCount}\n` +
+                `🛡️ Admins: ${adminCount}\n` +
+                `🙋 Regular Members: ${regularCount}\n` +
+                `🔇 Muted: ${metadata.announce ? "Yes" : "No"}\n` +
+                `🔒 Locked Info: ${metadata.restrict ? "Yes" : "No"}\n` +
+                `📝 Description: ${description}`
 
             if (wantsFullId) {
                 text += `\n🆔 Group JID: \`${chatId}\``
@@ -100,25 +55,9 @@ module.exports = {
             }, { quoted: msg })
 
             return null
-            const ownerName = metadata.owner
-                ? participantName(metadata, metadata.owner)
-                : "Unknown"
-
-            const text = `👥 *Group Info*
-
-📛 Name: ${metadata.subject || "Unnamed Group"}
-🆔 ID: ${chatId}
-👑 Owner: ${ownerName}
-👤 Members: ${metadata.participants?.length || 0}
-🛡 Admins: ${adminJids.length}
-🔇 Muted: ${metadata.announce ? "Yes" : "No"}
-🔒 Locked Edit Info: ${metadata.restrict ? "Yes" : "No"}
-📝 Description: ${metadata.desc || "No description set"}`
-
-            return text
         } catch (err) {
             console.log("GROUPINFO ERROR:", err)
-            return "⚠ Failed to fetch group info"
+            return "⚠️ Failed to fetch group info"
         }
     }
 }
