@@ -12,17 +12,35 @@ function compactText(value) {
         .trim()
 }
 
-function buildGroupInfoText(metadata, chatId, args) {
-    const adminJids = listAdminJids(metadata)
-    const ownerJid = metadata.owner || metadata.subjectOwner || ""
-    const memberCount = metadata.participants?.length || 0
-    const adminCount = adminJids.length
-    const regularCount = Math.max(memberCount - adminCount, 0)
-    const ownerLine = ownerJid
-        ? `${mentionTag(ownerJid)} (${participantName(metadata, ownerJid)})`
-        : "Unavailable"
-    const description = compactText(metadata.desc) || "No description set"
-    const wantsFullId = /\b(full|id)\b/i.test(String(args || ""))
+module.exports = {
+    name: "groupinfo",
+
+    async execute(sock, msg, args) {
+    participantName
+} = require("../lib/groupUtils")
+
+module.exports = {
+    name: "groupinfo",
+
+    async execute(sock, msg) {
+        try {
+            const chatId = msg.key.remoteJid
+
+            if (!isGroupChat(chatId)) {
+                return "❌ This command works only in groups"
+            }
+
+            const metadata = await getGroupMetadata(sock, chatId)
+            const adminJids = listAdminJids(metadata)
+            const ownerJid = metadata.owner || metadata.subjectOwner || ""
+            const memberCount = metadata.participants?.length || 0
+            const adminCount = adminJids.length
+            const regularCount = Math.max(memberCount - adminCount, 0)
+            const ownerLine = ownerJid
+                ? `${mentionTag(ownerJid)} (${participantName(metadata, ownerJid)})`
+                : "Unavailable"
+            const description = compactText(metadata.desc) || "No description set"
+            const wantsFullId = /\b(full|id)\b/i.test(String(args || ""))
 
     let text = `👥 *Group Info*
 
