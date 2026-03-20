@@ -30,6 +30,12 @@ function ensureRuntimeDirs() {
 
 function loadModule(filePath, label) {
     try {
+        const fileContents = fs.readFileSync(filePath, "utf-8")
+
+        if (/^(<{7}|={7}|>{7})/m.test(fileContents)) {
+            throw new Error("file contains unresolved merge conflict markers")
+        }
+
         delete require.cache[require.resolve(filePath)]
 
         const mod = require(filePath)

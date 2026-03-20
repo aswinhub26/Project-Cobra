@@ -1,4 +1,5 @@
 const path = require("path")
+const fs = require("fs")
 
 const commandFiles = [
     "commands/demote.js",
@@ -19,6 +20,12 @@ for (const file of commandFiles) {
     const absolutePath = path.join(__dirname, "..", file)
 
     try {
+        const source = fs.readFileSync(absolutePath, "utf-8")
+
+        if (/^(<{7}|={7}|>{7})/m.test(source)) {
+            throw new Error("contains unresolved merge conflict markers")
+        }
+
         delete require.cache[require.resolve(absolutePath)]
 
         const command = require(absolutePath)
