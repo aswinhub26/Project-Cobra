@@ -2,81 +2,61 @@ const fs = require("fs")
 const path = require("path")
 
 module.exports = {
+  name: "menu",
 
-name: "menu",
+  execute() {
+    const commandsPath = path.join(__dirname)
+    const pluginsPath = path.join(__dirname, "..", "plugins")
 
-execute(user, args, data, dbPath, analytics) {
+    const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"))
+    const pluginFiles = fs.existsSync(pluginsPath)
+      ? fs.readdirSync(pluginsPath).filter(f => f.endsWith(".js"))
+      : []
 
-const commandsPath = path.join(__dirname)
-const pluginsPath = path.join(__dirname, "..", "plugins")
+    let games = ""
+    let core = ""
+    let ai = ""
+    let download = ""
+    let tools = ""
+    let other = ""
 
-const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"))
-const pluginFiles = fs.existsSync(pluginsPath)
-? fs.readdirSync(pluginsPath).filter(f => f.endsWith(".js"))
-: []
+    const gameCommands = ["ttt", "quiz", "rps"]
 
-let core = ""
-let ai = ""
-let download = ""
-let tools = ""
-let other = ""
+    commandFiles.forEach(file => {
+      try {
+        const cmd = require(`./${file}`)
+        if (!cmd.name || cmd.name === "menu") return
 
-// CORE COMMANDS
-commandFiles.forEach(file => {
+        if (gameCommands.includes(cmd.name)) {
+          games += `│ • .${cmd.name}\n`
+        } else {
+          core += `│ • .${cmd.name}\n`
+        }
+      } catch {}
+    })
 
-try {
+    pluginFiles.forEach(file => {
+      try {
+        const plugin = require(`../plugins/${file}`)
+        if (!plugin.name) return
 
-const cmd = require(`./${file}`)
+        if (["ai"].includes(plugin.name)) ai += `│ • .${plugin.name}\n`
+        else if (["video", "play", "ig", "gif", "viewonce", "autostatus"].includes(plugin.name)) download += `│ • .${plugin.name}\n`
+        else if (["translate", "weather", "simplify", "news", "sticker"].includes(plugin.name)) tools += `│ • .${plugin.name}\n`
+        else other += `│ • .${plugin.name}\n`
+      } catch {}
+    })
 
-if (cmd.name && cmd.name !== "menu") {
-core += `│ • .${cmd.name}\n`
-}
-
-} catch {}
-
-})
-
-// PLUGINS
-pluginFiles.forEach(file => {
-
-try {
-
-const plugin = require(`../plugins/${file}`)
-
-if (!plugin.name) return
-
-// AI category
-if (["ai"].includes(plugin.name)) {
-ai += `│ • .${plugin.name}\n`
-}
-
-// Download category
-else if (["video","play","ig","gif","viewonce","autostatus"].includes(plugin.name)) {
-download += `│ • .${plugin.name}\n`
-}
-
-// Tools
-else if (["translate","weather","simplify","news","sticker"].includes(plugin.name)) {
-tools += `│ • .${plugin.name}\n`
-}
-
-// Other
-else {
-other += `│ • .${plugin.name}\n`
-}
-
-} catch {}
-
-})
-
-
-let menu = `╭━━━〔 🐍 *PROJECT COBRA* 〕━━━╮
+    return `╭━━━〔 🐍 *PROJECT COBRA* 〕━━━╮
 ┃ 🤖 WhatsApp Multi-Plugin Bot
 ┃ ⚡ Fast • Modular • Powerful
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+╭─❍ *🎮 GAMES*
+${games || "│ • None\n"}╰───────────────
+
 ╭─❍ *CORE COMMANDS*
-${core}╰───────────────
+${core || "│ • None\n"}╰───────────────
 
 ╭─❍ *🤖 AI*
 ${ai || "│ • None\n"}╰───────────────
@@ -96,11 +76,6 @@ ${other || "│ • None\n"}╰───────────────
 ╰───────────────
 
 ✨ Type commands with *.* prefix
-Example: *.ping*
-`
-
-return menu
-
-}
-
+Example: *.ttt*`
+  }
 }
