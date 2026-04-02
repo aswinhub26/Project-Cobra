@@ -40,6 +40,7 @@ It uses a **command-driven architecture** + **plugin system** so new capabilitie
 | `.about` | Bot and stack information |
 | `.stats` | Runtime analytics summary |
 | `.cobra install <plugin>` | Install plugin from Cobra plugin repository |
+| `.clear [count\|all\|help]` | Safely delete recent Cobra bot messages in current chat (admin/owner) |
 
 ### 👥 Group & Moderation Commands
 
@@ -93,6 +94,7 @@ It uses a **command-driven architecture** + **plugin system** so new capabilitie
 | `.autostatus on/off/status/<link>` | Auto-post supported links to status |
 | `.weather <city>` | Live weather lookup |
 | `.news [english\|tamil]` | Fetch top headlines |
+| `.search <query>` | Web search with fallback providers and concise top results |
 | `.hack <target>` | Fun simulated hack-style response command |
 
 ---
@@ -144,3 +146,11 @@ Then scan the QR code from WhatsApp.
 - Use the `.` prefix for all commands.
 - Some commands require **group admin** or **owner** permissions.
 - Plugins are loaded from the `plugins/` folder automatically.
+
+
+---
+
+## 🧹 Clear Command Tracking
+
+`.clear` only removes messages sent by Cobra (never user messages).
+The bot tracks outgoing message keys in memory with a rolling limit to avoid memory bloat.
