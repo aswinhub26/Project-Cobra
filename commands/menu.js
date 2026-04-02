@@ -42,7 +42,7 @@ module.exports = {
 
         if (["ai"].includes(plugin.name)) ai += `│ • .${plugin.name}\n`
         else if (["video", "play", "ig", "gif", "viewonce", "autostatus"].includes(plugin.name)) download += `│ • .${plugin.name}\n`
-        else if (["translate", "weather", "simplify", "news", "sticker"].includes(plugin.name)) tools += `│ • .${plugin.name}\n`
+        else if (["translate", "weather", "simplify", "news", "sticker", "search"].includes(plugin.name)) tools += `│ • .${plugin.name}\n`
         else other += `│ • .${plugin.name}\n`
       } catch {}
     })

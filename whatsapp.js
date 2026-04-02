@@ -14,6 +14,7 @@ const pino = require("pino");
 const handleCommand = require("./commandHandler");
 const settings = require("./settings");
 const autoStatusPlugin = require("./plugins/autostatus");
+const { trackBotMessage, isDeletePayload } = require("./lib/botMessageTracker");
 
 let bannerSent = false;
 
@@ -79,6 +80,23 @@ async function startBot() {
         logger: pino({ level: "silent" }),
         browser: ["Project Cobra", "Chrome", "1.0"]
     });
+
+    const originalSendMessage = sock.sendMessage.bind(sock);
+
+    sock.sendMessage = async (jid, content, options) => {
+        const sent = await originalSendMessage(jid, content, options);
+
+        try {
+            if (!isDeletePayload(content) && sent?.key?.id && jid) {
+                trackBotMessage(jid, sent.key);
+            }
+        } catch (trackErr) {
+            console.log("TRACK BOT MESSAGE FAILED:", trackErr.message);
+        }
+
+        return sent;
+    };
+
 
     sock.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect, qr } = update;
